@@ -1,0 +1,37 @@
+# ==== Claude Code 本地配置 ====
+.claude/
+**/.claude/
+
+# ==== Python 缓存/构建 ====
+__pycache__/
+*.py[cod]
+*.egg-info/
+.ipynb_checkpoints/
+
+# ==== 数据集(体积大,不上传) ====
+data/
+mnist_data/
+**/data/
+**/mnist_data/
+**/GINDataset/
+*.mat
+*.bin
+
+# ==== 模型权重/训练输出(体积大,不上传) ====
+*.pth
+*.pt
+*.weights
+*.npz
+output/
+**/weights/
+**/output/
+
+# ==== 日志 ====
+*.log
+
+# ==== 图片(训练图/曲线图不上传) ====
+*.png
+*.jpg
+*.jpeg
+*.gif
+*.bmp

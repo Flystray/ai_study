@@ -1,0 +1,1378 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>卷积神经网络（CNN）学习与实验报告</title>
+<style>
+:root {
+  --main: #2c3e50; --accent: #1a5276; --border: #d5dbe0; --bg: #f6f8fa;
+  --code-bg: #f0f2f5; --quote-bar: #b8c4cf;
+}
+* { box-sizing: border-box; }
+body {
+  margin: 0; background: var(--bg); color: var(--main);
+  font-family: -apple-system, "Segoe UI", "Microsoft YaHei", "PingFang SC", sans-serif;
+  line-height: 1.75; font-size: 15.5px;
+}
+.container { max-width: 880px; margin: 32px auto 80px; padding: 40px 56px;
+  background: #fff; border: 1px solid var(--border); border-radius: 8px;
+  box-shadow: 0 1px 4px rgba(0,0,0,.06); }
+h1 { font-size: 26px; color: var(--accent); border-bottom: 3px solid var(--accent);
+  padding-bottom: 12px; margin-top: 8px; }
+h2 { font-size: 21px; color: var(--accent); border-bottom: 1px solid var(--border);
+  padding-bottom: 6px; margin-top: 34px; }
+h3 { font-size: 17.5px; color: #34495e; margin-top: 26px; }
+h4 { font-size: 16px; color: #566573; }
+a { color: var(--accent); }
+p, li { text-align: justify; }
+strong { color: #1b2631; }
+
+/* 目录 */
+.toc { background: var(--bg); border: 1px solid var(--border); border-radius: 6px;
+  padding: 14px 22px; margin-bottom: 30px; font-size: 14px; }
+.toc .toc-title { font-weight: 700; color: var(--accent); margin-bottom: 6px; }
+.toc ul { list-style: none; padding-left: 16px; margin: 4px 0; }
+.toc li { margin: 2px 0; }
+.toc a { text-decoration: none; }
+.toc a:hover { text-decoration: underline; }
+
+/* 表格 */
+table { border-collapse: collapse; width: 100%; margin: 18px 0; font-size: 14.5px; }
+th, td { border: 1px solid var(--border); padding: 8px 12px; text-align: left; }
+th { background: #eef2f6; color: var(--accent); font-weight: 600; }
+tbody tr:nth-child(even) { background: #fafbfc; }
+
+/* 引用块 */
+blockquote { margin: 16px 0; padding: 10px 18px; background: var(--bg);
+  border-left: 4px solid var(--quote-bar); border-radius: 0 4px 4px 0; color: #4a5a66; }
+blockquote p { margin: 6px 0; }
+
+/* 代码 */
+code { background: var(--code-bg); padding: 2px 6px; border-radius: 4px;
+  font-family: Consolas, "Courier New", monospace; font-size: 88%; color: #c0392b; }
+pre { background: #f8f9fa; border: 1px solid var(--border); border-radius: 6px;
+  padding: 12px 16px; overflow-x: auto; }
+pre code { background: none; padding: 0; color: #2c3e50; font-size: 13.5px; }
+
+/* 数学公式 */
+.math-block { text-align: center; margin: 20px 0; overflow-x: auto; }
+mjx-container[jax="CHTML"] { font-size: 105%; }
+</style>
+<script>
+window.MathJax = {
+  tex: { inlineMath: [['\\(', '\\)']], displayMath: [['\\[', '\\]']] },
+  options: { skipHtmlTags: ['script', 'noscript', 'style', 'textarea', 'pre', 'code'] }
+};
+</script>
+<script src="mathjax/tex-chtml.js"></script>
+</head>
+<body>
+<div class="container">
+<div class="toc">
+<ul>
+<li><a href="#93bdf2b2">title: ""</a></li>
+<li><a href="#08752e5d">卷积神经网络（CNN）学习与实验报告</a></li>
+<li><a href="#69f719e3">第一部分 理论学习：CNN 原理与 LeNet-5 梯度推导</a><ul>
+<li><a href="#397f5dc0">1. 卷积神经网络的基本原理</a></li>
+<li><a href="#5cf82d4b">2. 符号系统定义（记法约定）</a></li>
+<li><a href="#960062a9">3. 卷积层梯度推导</a><ul>
+<li><a href="#74571935">3.1 对权重（卷积核）的梯度 \(\partial L/\partial W\)</a></li>
+<li><a href="#dcd6189e">3.2 对偏置的梯度 \(\partial L/\partial b\)</a></li>
+<li><a href="#61a7e093">3.3 对输入的梯度 \(\partial L/\partial a^{l-1}\)（误差反向传播）</a></li>
+<li><a href="#4325be7f">3.4 推导小结（LeNet-5 卷积层三公式）</a></li>
+</ul>
+</li>
+<li><a href="#4600a828">4. 池化层梯度推导</a><ul>
+<li><a href="#b8a0bf53">4.1 Max Pooling（最大池化）</a></li>
+<li><a href="#948d1d05">4.2 Average Pooling（平均池化）</a></li>
+</ul>
+</li>
+<li><a href="#2dc4b9d1">5. 经典 CNN 架构学习笔记（AlexNet / VGGNet / ResNet）</a><ul>
+<li><a href="#c50a0f05">5.1 主流 CNN 演进脉络</a></li>
+<li><a href="#10a1c81b">5.2 AlexNet：深度 CNN 的里程碑</a></li>
+<li><a href="#6b10aa9f">5.3 VGGNet：深而规整的力量</a></li>
+<li><a href="#5a0c6cc6">5.4 ResNet：残差学习破解"深度瓶颈"</a></li>
+<li><a href="#c7f9f259">5.5 三模型横向对比</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li><a href="#402a0242">第二部分 论文阅读笔记</a><ul>
+<li><a href="#0f0a14cd">一、知识蒸馏（Knowledge Distillation）</a><ul>
+<li><a href="#72dba167">1. Do Deep Nets Really Need to be Deep? —— 迁移知识的第一声</a></li>
+<li><a href="#673aa5b9">2. Distilling the Knowledge in a Neural Network —— 知识蒸馏的经典范式</a></li>
+</ul>
+</li>
+<li><a href="#cde2fc96">二、生成式模型（Generative Models）</a><ul>
+<li><a href="#4b6772b4">3. 基于 CNN 的 AutoEncoder（自编码器）</a></li>
+<li><a href="#5a20f02a">4. Generative Adversarial Nets（GAN）—— 对抗生成网络</a></li>
+<li><a href="#5fc2f542">5. Conditional Generative Adversarial Nets（CGAN）—— 可控生成</a></li>
+<li><a href="#59980860">6. Image-to-Image Translation with Conditional Adversarial Networks（Pix2Pix）</a></li>
+<li><a href="#a5e94d78">7. Unpaired Image-to-Image Translation using Cycle-Consistent Adversarial Networks（CycleGAN）</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li><a href="#bc1be13a">第二部分 论文阅读笔记（续）—— 目标检测</a><ul>
+<li><a href="#0482dfa6">8. Rich feature hierarchies for accurate object detection and semantic segmentation（R-CNN）</a></li>
+<li><a href="#26e4c2c0">9. Fast R-CNN</a></li>
+<li><a href="#222a8078">10. Faster R-CNN: Towards Real-Time Object Detection with Region Proposal Networks</a></li>
+<li><a href="#53c40530">11. Feature Pyramid Networks for Object Detection（FPN）</a></li>
+<li><a href="#d99b45ee">12. You Only Look Once: Unified, Real-Time Object Detection（YOLOv1）</a></li>
+<li><a href="#6ba59b0f">13. SSD: Single Shot MultiBox Detector</a></li>
+<li><a href="#9a42fc15">目标检测技术脉络总结</a></li>
+</ul>
+</li>
+<li><a href="#c2676beb">第三部分 实验报告</a><ul>
+<li><a href="#5379de53">1. 实验环境</a></li>
+<li><a href="#a966dee5">2. 实验总体设计</a><ul>
+<li><a href="#b4ae259c">2.1 数据集</a></li>
+<li><a href="#891ff003">2.2 统一口径</a></li>
+</ul>
+</li>
+<li><a href="#9a5bb08f">3. 实验一：LeNet-5 与全连接网络的对比</a><ul>
+<li><a href="#cdb172b5">3.1 设计目的</a></li>
+<li><a href="#5829bf50">3.2 模型与超参</a></li>
+<li><a href="#8d63e3df">3.3 实验结果</a></li>
+<li><a href="#ed346308">3.4 分析与结论</a></li>
+</ul>
+</li>
+<li><a href="#1ab5cec9">4. 实验二：LeNet-5 超参数对比</a><ul>
+<li><a href="#6503d177">4.1 设计</a></li>
+<li><a href="#9bcbed79">4.2 结果汇总（MNIST，各 4 epochs）</a></li>
+<li><a href="#c1010534">4.3 分析与结论</a></li>
+</ul>
+</li>
+<li><a href="#bffc49b3">5. 实验三：知识蒸馏</a><ul>
+<li><a href="#2508295d">5.1 设计</a></li>
+<li><a href="#0ed0adbc">5.2 实验结果</a></li>
+<li><a href="#c21bdc2b">5.3 分析与结论</a></li>
+</ul>
+</li>
+<li><a href="#35545080">6. 实验四：AutoEncoder（CNN-AE vs 全连接 AE）</a><ul>
+<li><a href="#b303f2d3">6.1 设计</a></li>
+<li><a href="#809ad54d">6.2 结果（15 epochs，MSE 重建损失，输入 [0,1]）</a></li>
+<li><a href="#62cd3e51">6.3 分析与结论</a></li>
+<li><a href="#004e3e2d">6.4 延伸拓展：潜在空间的"背诵 vs 理解"验证（插值实验）</a></li>
+</ul>
+</li>
+<li><a href="#7a304d2f">7. 实验五：GAN 与 CGAN</a><ul>
+<li><a href="#4421ea06">7.1 设计</a></li>
+<li><a href="#2b36d723">7.2 结果</a></li>
+<li><a href="#70697f37">7.3 分析与结论</a></li>
+</ul>
+</li>
+<li><a href="#a6b14725">8. 实验六：预训练模型在 ImageNet 上的验证（完整完成）</a><ul>
+<li><a href="#a8dab0a8">8.1 结构分析（参数量 / FLOPs / 存储）</a></li>
+<li><a href="#f6507ca3">8.2 ImageNet 验证结果</a></li>
+<li><a href="#a4a61034">8.3 分析</a></li>
+</ul>
+</li>
+<li><a href="#aac358c4">9. 选做实验（已完成）</a><ul>
+<li><a href="#195c0b4a">9.1 Pix2Pix 风格迁移（边缘图 → 建筑立面）</a></li>
+<li><a href="#6f8ab82c">9.2 YOLOv3 目标检测（COCO 80 类）</a></li>
+</ul>
+</li>
+<li><a href="#144d8262">10. 实验总结与学习心得</a><ul>
+<li><a href="#e27122a4">10.1 实验成果一览</a></li>
+<li><a href="#63429d3f">10.2 学习心得</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</div>
+
+<article>
+<hr />
+<h2 id="93bdf2b2">title: ""</h2>
+<h1 id="08752e5d">卷积神经网络（CNN）学习与实验报告</h1>
+<div align="center">
+
+**主题：基础知识学习 · 2. CNN**
+
+*覆盖内容：卷积神经网络原理与梯度推导、主流 CNN 架构、知识蒸馏、生成式模型（AE / GAN / CGAN / Pix2Pix / CycleGAN）、目标检测（R-CNN 系列 / YOLO / SSD）*
+
+---
+
+</div>
+
+<blockquote>
+<p>说明：本报告包含理论学习、14 篇论文阅读笔记与全部实验（Python + PyTorch 实跑）三部分，
+实验代码位于 <code>code/</code> 目录，全部实验数据与图表位于 <code>results/</code> 目录，可复现。</p>
+</blockquote>
+<p>\newpage</p>
+<h1 id="69f719e3">第一部分　理论学习：CNN 原理与 LeNet-5 梯度推导</h1>
+<h2 id="397f5dc0">1. 卷积神经网络的基本原理</h2>
+<p>卷积神经网络（Convolutional Neural Network, CNN）针对全连接网络"参数量爆炸、忽视图像空间结构"的缺陷，引入<strong>局部连接</strong>与<strong>权重共享</strong>两大核心思想：</p>
+<ul>
+<li><strong>局部连接</strong>：每个神经元只与输入的一个局部感受野相连，符合图像中"相邻像素强相关、远处像素弱相关"的自然先验；</li>
+<li><strong>权重共享</strong>：同一通道的所有位置共用同一组卷积核权重，使参数量与图像尺寸解耦，同时让同一特征可在图像任意位置被识别（平移不变性）。</li>
+</ul>
+<p>一个典型的卷积层由三部分组成：</p>
+<div class="math-block">\[\mathbf{c}=\mathrm{relu}(\mathrm{conv}(\mathbf{a},\mathbf{w})+\mathbf{b}) \]</div>
+<p>其中 \(\mathbf{a}\) 为输入特征图，\(\mathbf{w}\) 为卷积核，\(\mathbf{b}\) 为偏置，\(\mathrm{conv}\) 表示滑窗点乘求和，最后通过非线性激活（如 ReLU）。紧随其后的池化层（Pooling）对局部邻域做下采样：</p>
+<div class="math-block">\[\mathbf{h}=\mathrm{pooling}(\mathbf{x}) \]</div>
+<h2 id="5cf82d4b">2. 符号系统定义（记法约定）</h2>
+<p>为推导梯度，先建立一套严格的记法。设网络共 \(L\) 层，样本记 \(x\)，真实标签记 \(t\)，损失函数记 \(L\)。</p>
+<table>
+<thead>
+<tr>
+<th>符号</th>
+<th>含义</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>\(\mathbf{a}^{l}\)</td>
+<td>第 \(l\) 层<strong>激活值</strong>（卷积/池化后、或激活函数后）</td>
+</tr>
+<tr>
+<td>\(\mathbf{z}^{l}\)</td>
+<td>第 \(l\) 层<strong>线性输出</strong>（卷积后、激活前的净输入）</td>
+</tr>
+<tr>
+<td>\(\mathbf{W}^{l}\)</td>
+<td>第 \(l\) 层卷积核权重，形状 \(c_{out}\times c_{in}\times k\times k\)</td>
+</tr>
+<tr>
+<td>\(\mathbf{b}^{l}\)</td>
+<td>第 \(l\) 层偏置，长度 \(c_{out}\)</td>
+</tr>
+<tr>
+<td>\(\delta^{l}\)</td>
+<td>第 \(l\) 层的<strong>误差项</strong>（对净输入 \(\mathbf{z}^{l}\) 的梯度 \(\partial L/\partial\mathbf{z}^{l}\)）</td>
+</tr>
+<tr>
+<td>\(*\)</td>
+<td>二维互相关（实际卷积运算，即滑窗点乘）</td>
+</tr>
+<tr>
+<td>\(\mathrm{rot180}(\cdot)\)</td>
+<td>将卷积核旋转 \(180^\circ\)（用于反传）</td>
+</tr>
+<tr>
+<td>\(\circ\)</td>
+<td>逐元素（Hadamard）乘</td>
+</tr>
+</tbody>
+</table>
+<p>以输入为 \(H\times W\) 单通道特征图、单个 \(k\times k\) 卷积核为例，第 \(l\) 层卷积输出的第 \(i\) 行第 \(j\) 列元素为：</p>
+<div class="math-block">\[z^{l}_{i,j}=\sum_{m=0}^{k-1}\sum_{n=0}^{k-1} W_{m,n}\; a^{l-1}_{i+m,\;j+n}+b \]</div>
+<p>激活：\(a^{l}=f(z^{l})\)，\(f\) 为激活函数（LeNet-5 原型用 \(\tanh\)，现代实现多用 ReLU）。</p>
+<h2 id="960062a9">3. 卷积层梯度推导</h2>
+<p>误差反向传播需要三类梯度：<strong>对卷积核的梯度</strong> \(\partial L/\partial W\)、<strong>对偏置的梯度</strong> \(\partial L/\partial b\)、<strong>对输入的梯度</strong> \(\partial L/\partial a^{l-1}\)（用于继续往前传）。</p>
+<p>设已知本层误差项 \(\delta^{l}=\partial L/\partial z^{l}\)，且 \(\delta^{l}=(\partial L/\partial a^{l})\circ f'(z^{l})\)。</p>
+<h3 id="74571935">3.1 对权重（卷积核）的梯度 \(\partial L/\partial W\)</h3>
+<p>由链式法则，权重 \(W_{m,n}\) 只出现在所有以 \((i,j)\) 为中心位置对应的输出 \(z^{l}_{i,j}\) 中：</p>
+<div class="math-block">\[\frac{\partial L}{\partial W_{m,n}}
+=\sum_{i}\sum_{j} \frac{\partial L}{\partial z^{l}_{i,j}}\frac{\partial z^{l}_{i,j}}{\partial W_{m,n}}
+=\sum_{i}\sum_{j} \delta^{l}_{i,j}\; a^{l-1}_{i+m,\;j+n} \]</div>
+<p>写成卷积形式（即<strong>误差图与输入特征图的互相关</strong>）：</p>
+<div class="math-block">\[\boxed{\;\frac{\partial L}{\partial \mathbf{W}^{l}}=\delta^{l} * \mathbf{a}^{l-1}\;} \]</div>
+<p><strong>直观理解</strong>：把本层误差图当作"新特征图"，将输入特征图当作"新卷积核"，二者做与正向完全相同的滑窗卷积，即为权重梯度。若卷积核有 \(c_{out}\) 个通道，则对每个输出通道单独计算一组梯度。</p>
+<h3 id="dcd6189e">3.2 对偏置的梯度 \(\partial L/\partial b\)</h3>
+<p>偏置 \(b\) 对整个输出平面是共享的（每一个输出位置都加同一个 \(b\)），因此：</p>
+<div class="math-block">\[\frac{\partial L}{\partial b}=\sum_{i}\sum_{j}\delta^{l}_{i,j} \]</div>
+<div class="math-block">\[\boxed{\;\frac{\partial L}{\partial \mathbf{b}^{l}}=\sum_{i,j}\delta^{l}_{i,j}\;} \]</div>
+<p>即对误差图的所有元素求和。</p>
+<h3 id="61a7e093">3.3 对输入的梯度 \(\partial L/\partial a^{l-1}\)（误差反向传播）</h3>
+<p>关键问题是：上一层的误差 \(\delta^{l-1}\) 如何计算？一个输出点 \(z^{l}_{i,j}\) 受输入 \(\mathbf{a}^{l-1}\) 中一个 \(k\times k\) 邻域影响；反过来，输入中某个点 \(a^{l-1}_{p,q}\) 会通过卷积核的不同权重影响<strong>多个</strong>输出位置：</p>
+<div class="math-block">\[\delta^{l-1}_{p,q}
+=\sum_{i}\sum_{j}\delta^{l}_{i,j}\frac{\partial z^{l}_{i,j}}{\partial a^{l-1}_{p,q}}
+=\sum_{m}\sum_{n} \delta^{l}_{p-m,\;q-n}\; W_{m,n} \]</div>
+<p>注意这里的下标配对方式（误差图与权重反向对齐），等价于<strong>误差图与旋转 180° 的卷积核做互相关</strong>：</p>
+<div class="math-block">\[\boxed{\;\delta^{l-1}=\delta^{l} * \mathrm{rot180}(\mathbf{W}^{l})\;} \]</div>
+<p>最后还要乘上激活函数导数，得到 \(\delta^{l-1}=(\delta^{l}*\mathrm{rot180}(W^{l}))\circ f'(z^{l-1})\)。</p>
+<h3 id="4325be7f">3.4 推导小结（LeNet-5 卷积层三公式）</h3>
+<blockquote>
+<p>已知 \(\delta^{l}\)（本层误差），则卷积层三类梯度为：
+</p>
+</blockquote>
+<div class="math-block">\[\begin{aligned}
+\frac{\partial L}{\partial W^{l}} &amp;= \delta^{l} * \mathbf{a}^{l-1} \\[4pt]
+\frac{\partial L}{\partial b^{l}} &amp;= \sum_{i,j}\delta^{l}_{i,j} \\[4pt]
+\frac{\partial L}{\partial \mathbf{a}^{l-1}} &amp;= \delta^{l} * \mathrm{rot180}(W^{l})
+\end{aligned} \]</div>
+<h2 id="4600a828">4. 池化层梯度推导</h2>
+<p>池化层没有可学习参数，其任务是把误差"送回"池化窗口内的各个输入位置。设池化窗口大小为 \(k_p\times k_p\)，输出误差 \(\delta^{l}_{k}\) 已知（\(k\) 索引窗口），需要求输入误差 \(\delta^{l-1}_{i,j}\)。</p>
+<h3 id="b8a0bf53">4.1 Max Pooling（最大池化）</h3>
+<p>Max Pooling 正向只保留窗口内的最大值，其导数在<strong>除最大值位置外处处为 0</strong>。因此反向时，误差完整回传给窗口内最大值所在的位置：</p>
+<div class="math-block">\[\delta^{l-1}_{i,j}=
+\begin{cases}
+\delta^{l}_{k}, &amp; (i,j)=\mathop{\arg\max}_{(m,n)\in \text{win}_k} x_{m,n}\\[2pt]
+0, &amp; \text{其他}
+\end{cases} \]</div>
+<p>即一张与输入同尺寸的"稀疏"梯度图：每个窗口只在其最大元素处有非零梯度 \(\delta^{l}_{k}\)，其余位置为 0。</p>
+<h3 id="948d1d05">4.2 Average Pooling（平均池化）</h3>
+<p>Average Pooling 正向对窗口内元素取平均，每个元素对输出的贡献均为 \(1/k_p^2\)。反向时误差被<strong>平均分配到窗口内所有位置</strong>：</p>
+<div class="math-block">\[\delta^{l-1}_{i,j}=\frac{1}{k_p^{2}}\,\delta^{l}_{k},\qquad (i,j)\in \text{win}_k \]</div>
+<h2 id="2dc4b9d1">5. 经典 CNN 架构学习笔记（AlexNet / VGGNet / ResNet）</h2>
+<h3 id="c50a0f05">5.1 主流 CNN 演进脉络</h3>
+<table>
+<thead>
+<tr>
+<th>模型</th>
+<th>年份</th>
+<th>核心贡献</th>
+<th>关键结构</th>
+<th>ImageNet Top-5</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>LeNet-5</td>
+<td>1998</td>
+<td>CNN 开山之作</td>
+<td>卷积+池化+全连接，手写数字识别</td>
+<td>——</td>
+</tr>
+<tr>
+<td>AlexNet</td>
+<td>2012</td>
+<td>深度学习时代开启</td>
+<td>ReLU、Dropout、数据增强、局部响应归一化、双 GPU 并行</td>
+<td>15.3%</td>
+</tr>
+<tr>
+<td>VGG-16</td>
+<td>2014</td>
+<td>小卷积核堆叠</td>
+<td>统一使用 3×3 卷积堆叠（感受野等价大核，参数更少）</td>
+<td>7.3%</td>
+</tr>
+<tr>
+<td>ResNet-50</td>
+<td>2015</td>
+<td>残差学习解决退化</td>
+<td>跳跃连接（skip connection）+ Bottleneck 结构</td>
+<td>3.57%（ResNet-152）</td>
+</tr>
+</tbody>
+</table>
+<h3 id="10a1c81b">5.2 AlexNet：深度 CNN 的里程碑</h3>
+<ul>
+<li><strong>任务</strong>：ImageNet 大规模分类（120 万训练图像，1000 类），将 Top-5 错误率从 26.2% 降至 <strong>15.3%</strong>，远超传统方法，引爆深度学习革命。</li>
+<li><strong>结构</strong>：8 层网络（5 卷积 + 3 全连接），在 2012 年的 GTX 580 上需 5-6 天训练。</li>
+<li><strong>关键技巧</strong>：
+  1. <strong>ReLU 激活</strong>：解决 sigmoid/tanh 的梯度饱和问题，训练速度提升数倍；
+  2. <strong>Dropout</strong>：全连接层随机丢弃神经元，缓解过拟合；
+  3. <strong>数据增强</strong>：水平翻转、随机裁剪、RGB 通道扰动；
+  4. <strong>重叠池化</strong>：池化窗口 3×3、步长 2，略优于非重叠池化。</li>
+<li><strong>学习体会</strong>：AlexNet 证明了大模型 + 大数据 + 并行计算 + 正确工程技巧的组合威力，但其架构仍沿用 LeNet-5 的"卷积特征提取 + 全连接分类"范式。</li>
+</ul>
+<h3 id="6b10aa9f">5.3 VGGNet：深而规整的力量</h3>
+<ul>
+<li><strong>核心洞察</strong>：两个 \(3\times3\) 卷积堆叠等价于一个 \(5\times5\) 卷积的感受野，三个 \(3\times3\) 等价于 \(7\times7\)，但参数量更少（\(2\times9&lt;25\)、\(3\times9&lt;49\)），且引入更多非线性。</li>
+<li><strong>结构</strong>：VGG-16 = 13 卷积 + 3 全连接，全部使用 \(3\times3\) 卷积（padding=1）与 \(2\times2\) 最大池化，结构极其规整，易于复现。</li>
+<li><strong>结论</strong>：<strong>网络加深 → 特征层次更丰富 → 性能提升</strong>。VGG 验证了"深度"本身是性能的关键因素。</li>
+<li><strong>局限</strong>：全连接层（前两个 4096 维）参数量巨大，VGG-16 约 1.38 亿参数，存储 ~500MB，推理慢，工程上逐渐被 ResNet 取代。</li>
+</ul>
+<h3 id="5a0c6cc6">5.4 ResNet：残差学习破解"深度瓶颈"</h3>
+<ul>
+<li><strong>问题</strong>：仅靠堆叠层数会带来两个问题——一是梯度消失/爆炸，二是<strong>退化现象</strong>（网络越深，训练误差反而越高，说明不是过拟合，而是优化困难）。</li>
+<li><strong>方案</strong>：引入<strong>跳跃连接（shortcut / skip connection）</strong>，让网络学习残差：</li>
+</ul>
+<div class="math-block">\[y = \mathcal{F}(x,\{W_i\}) + x \]</div>
+<p>即使梯度经过 \(\mathcal{F}\) 消失，也能通过捷径直通上一层，保证深层网络至少不比浅层差。
+- <strong>Bottleneck 结构</strong>（ResNet-50/101/152 使用）：\(1\times1\rightarrow3\times3\rightarrow1\times1\)，先用 \(1\times1\) 降维减少计算量，最后 \(1\times1\) 恢复维度，在保持容量同时大幅压缩 FLOPs。
+- <strong>成果</strong>：ResNet-152 Top-5 错误率 3.57%，超越人类水平（约 5%），成为后续所有主流网络的骨干（backbone）。</p>
+<h3 id="c7f9f259">5.5 三模型横向对比</h3>
+<table>
+<thead>
+<tr>
+<th>模型</th>
+<th>参数量</th>
+<th>深度（含全连接）</th>
+<th>单图 224² FLOPs</th>
+<th>设计哲学</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>AlexNet</td>
+<td>~60M</td>
+<td>8 层</td>
+<td>~0.7 G</td>
+<td>大卷积核 + ReLU + Dropout</td>
+</tr>
+<tr>
+<td>VGG-16</td>
+<td>~138M</td>
+<td>16 层</td>
+<td>~15.5 G</td>
+<td>小核堆叠、结构规整、追求深度</td>
+</tr>
+<tr>
+<td>ResNet-50</td>
+<td>~25.6M</td>
+<td>50 层</td>
+<td>~3.8 G</td>
+<td>残差连接 + Bottleneck，深度与效率兼得</td>
+</tr>
+</tbody>
+</table>
+<p>\newpage</p>
+<h1 id="402a0242">第二部分　论文阅读笔记</h1>
+<blockquote>
+<p>阅读范围涵盖知识蒸馏、生成式模型、目标检测三大主题共 13 篇经典论文 + AutoEncoder 基础概念。
+每篇按【一句话】【动机】【核心方法】【关键公式】【实验结果】【我的理解】六部分记录。</p>
+</blockquote>
+<hr />
+<h2 id="0f0a14cd">一、知识蒸馏（Knowledge Distillation）</h2>
+<h3 id="72dba167">1. Do Deep Nets Really Need to be Deep? —— 迁移知识的第一声</h3>
+<ul>
+<li><strong>作者/机构</strong>：Jimmy Ba, Rich Caruana（多伦多大学），2014 年，arXiv:1312.6184</li>
+<li><strong>一句话</strong>：用<strong>浅层网络</strong>也能逼近深度网络的性能，关键在于把深度网络"输出概率分布"中蕴含的知识迁移给浅网络。</li>
+</ul>
+<p><strong>动机</strong>：深度网络虽然准确率高，但计算量大、部署困难（移动端/实时系统）。能否训练一个同样准确但更浅更快的模型？</p>
+<p><strong>核心方法</strong>：
+1. 深度网络 D 在训练集上预测出 softmax 概率向量 \(\mathbf{P}\)；
+2. 把 \(\mathbf{P}\) 当作"软标签"监督浅网络 S 的训练，损失用 KL 散度：</p>
+<div class="math-block">\[\mathcal{L}_{KD}=D_{KL}(\mathbf{P}_{D}\parallel \mathbf{P}_{S}) \]</div>
+<ol start="3">
+<li>相比只用 0/1 硬标签，软标签包含了类别间的<strong>相似性结构</strong>（例如"马"与"斑马"比"马"与"卡车"更接近），这正是可迁移的"暗知识"。</li>
+</ol>
+<p><strong>实验结果</strong>：在 MNIST 上用深度网络蒸馏出的浅层网络，错误率从 1.28% 提升到接近深网络水平；在语音识别等任务上也得到验证——<strong>无需增加参数就能显著提升浅网络性能</strong>。</p>
+<p><strong>我的理解</strong>：这篇论文是知识蒸馏的开山之作，证明"模型产出的分布比类别标签携带更多信息"。它启发后续 Hinton 用"温度"平滑分布，也启发模型压缩（蒸馏）、跨领域迁移（teacher-student）等大量工作。</p>
+<hr />
+<h3 id="673aa5b9">2. Distilling the Knowledge in a Neural Network —— 知识蒸馏的经典范式</h3>
+<ul>
+<li><strong>作者/机构</strong>：Geoffrey Hinton, Oriol Vinyals, Jeff Dean（Google），2015 年，arXiv:1503.02531</li>
+<li><strong>一句话</strong>：通过<strong>温度软化</strong>教师网络的输出分布，把大模型（或集成模型）的知识"蒸馏"到小模型，并且可以把多个模型的知识压缩进一个模型。</li>
+</ul>
+<p><strong>动机</strong>：生产环境需要轻量模型，而最优秀的模型往往很大或是多个模型的集成。希望把大模型/集成的知识无损地移植到一个小模型上。</p>
+<p><strong>核心方法</strong>：
+1. <strong>软化分布</strong>：用温度参数 \(T\) 软化 softmax：</p>
+<div class="math-block">\[q_i=\frac{\exp(z_i/T)}{\sum_j \exp(z_j/T)} \]</div>
+<p>温度 \(T\) 越高，分布越"平缓"，暴露出类间的相对相似度。
+2. <strong>蒸馏损失</strong>：学生网络同时拟合硬标签和教师软标签，</p>
+<div class="math-block">\[\mathcal{L}=\alpha\,\mathrm{CE}(q_s^T, y)+(1-\alpha)\,T^2\cdot D_{KL}(q_t^T\parallel q_s^T) \]</div>
+<p>其中 \(T^2\) 因子用于补偿温度缩放对梯度量级的影响。
+3. <strong>特殊技巧</strong>：对 MNIST 可忽略所有除正确类之外的负标签；对大数据集可只用一个高温度。</p>
+<p><strong>实验结果</strong>：
+- MNIST：一个在 60k 样本上训练的模型，如果用教师模型的软标签训练 10k 样本，效果几乎与直接训练 60k 一样好（"蒸馏相当于数据增广"）；
+- 语音识别：把 8 个模型的集成蒸馏成一个模型，效果接近集成本身；
+- 引入专家模型（specialists）解决类间高度混淆问题。</p>
+<p><strong>我的理解</strong>：这篇把蒸馏总结为"hard target 提供类别正确性，soft target 提供类间结构"，并给出温度这个可调旋钮，是工程上最常用的一版。温度 \(T\) 与损失权重 \(\alpha\) 是两个关键超参，\(T\) 过大过小都会丢失信息——太大导致分布太平、太小退化为硬标签。后续实验（我的实验 3）将在 MNIST/Fashion 上验证：<strong>用 CNN 蒸馏 MLP，能否提升小全连接网络的精度</strong>。</p>
+<hr />
+<h2 id="cde2fc96">二、生成式模型（Generative Models）</h2>
+<h3 id="4b6772b4">3. 基于 CNN 的 AutoEncoder（自编码器）</h3>
+<ul>
+<li><strong>一句话</strong>：自编码器 = 编码器 + 解码器，先压缩再重建，是无监督表征学习与生成任务的基石。</li>
+</ul>
+<p><strong>核心思想</strong>：AE 用神经网络学习恒等映射 \(\hat x = D(E(x))\approx x\)，迫使网络抓住数据的主要结构而非逐像素记忆：</p>
+<div class="math-block">\[\min_{\theta_E,\theta_D}\;\mathbb{E}_x\big[\lVert x-D(E(x))\rVert^2\big] \]</div>
+<ul>
+<li><strong>编码器 \(E\)</strong>：把高维输入压缩成低维<strong>潜在向量</strong> \(z\)；</li>
+<li><strong>解码器 \(D\)</strong>：由 \(z\) 重建输入。</li>
+</ul>
+<p><strong>CNN-AE 的优势</strong>：用卷积提取局部特征、参数共享、天然保留空间结构，重建质量优于把图像拉平的全连接 AE（全连接会把像素位置破坏并产生大量参数）。</p>
+<p><strong>我的理解</strong>：AE 学到的是"紧凑表示"，重建清晰即表示保留了关键信息。它的瓶颈在于：潜在空间无约束，任意两点之间不连续，因此直接采样 \(z\) 生成图像质量有限（GAN 与 VAE 正是为此而改进）。本实验（实验 4）将对比 <strong>CNN-AE 与全连接 AE</strong> 的重建效果。</p>
+<hr />
+<h3 id="5a20f02a">4. Generative Adversarial Nets（GAN）—— 对抗生成网络</h3>
+<ul>
+<li><strong>作者/机构</strong>：Ian Goodfellow 等（蒙特利尔大学），2014 年，arXiv:1406.2661</li>
+<li><strong>一句话</strong>：让<strong>生成器</strong>与<strong>判别器</strong>玩一个二人零和博弈，生成器在"骗过判别器"的过程中学会逼近真实数据分布。</li>
+</ul>
+<p><strong>动机</strong>：传统生成模型（如最大似然）难以显式计算复杂分布，或依赖强假设；希望有一种无需显式建模密度、能直接生成逼真样本的方法。</p>
+<p><strong>核心方法</strong>：
+1. 生成器 \(G\)：从噪声 \(z\sim p_z\) 映射到数据空间 \(G(z)\)；
+2. 判别器 \(D\)：判断输入是真实样本还是生成样本；
+3. 对抗训练目标（min-max 博弈）：</p>
+<div class="math-block">\[\min_G\max_D\; V(D,G)=\mathbb{E}_{x\sim p_{data}}\big[\log D(x)\big]+\mathbb{E}_{z\sim p_z}\big[\log(1-D(G(z)))\big] \]</div>
+<ol start="4">
+<li>理论证明：当 \(D\) 达到最优时，\(G\) 的优化等价于最小化 \(p_{data}\) 与 \(p_g\) 之间的 <strong>JS 散度</strong>，博弈的纳什均衡点 \(p_g=p_{data}\) 时生成分布完全还原真实分布。</li>
+</ol>
+<p><strong>实验结果</strong>：在 MNIST、TFD、CIFAR-10 上生成的样本视觉质量显著优于当时的 VAE/DBN，无需预训练即可训练。</p>
+<p><strong>GAN 与对抗训练（Adversarial Training, AT）的区别</strong>（任务要求辨析）：
+- <strong>对抗生成网络（GAN）</strong>：用"生成器 vs 判别器"博弈来<strong>学习数据分布、生成新样本</strong>，两者合作实现生成目标；
+- <strong>对抗训练（AT）</strong>：指<strong>增强分类器鲁棒性</strong>的训练范式，向正常样本中加入对抗扰动（如 FGSM）后与干净样本一起训练，使模型对恶意扰动不敏感——它不生成数据，而是"用对抗样本训练以防御对抗样本"。
+- 二者都用到"对抗"思想，但目标完全不同：GAN 面向<strong>生成</strong>，AT 面向<strong>鲁棒分类</strong>。</p>
+<p><strong>我的理解</strong>：GAN 训练不稳定（模式坍缩、训练不收敛）的根源在于 min-max 博弈而非普通最小化；改进方向包括 WGAN（换用 Wasserstein 距离）、谱归一化、条件 GAN 等。它开启了图像生成的新纪元，后续 CGAN/Pix2Pix/CycleGAN 都是在其框架上加入条件或结构约束。</p>
+<hr />
+<h3 id="5fc2f542">5. Conditional Generative Adversarial Nets（CGAN）—— 可控生成</h3>
+<ul>
+<li><strong>作者/机构</strong>：Mehdi Mirza, Simon Osindero，2014 年，arXiv:1411.1784</li>
+<li><strong>一句话</strong>：给 GAN 加上<strong>条件</strong> \(y\)，让生成器按指定类别/属性生成样本，变"随机生成"为"定向生成"。</li>
+</ul>
+<p><strong>动机</strong>：原始 GAN 无法控制生成内容的类别，MNIST 上只能随机生成"某个数字"，无法指定"生成数字 7"。</p>
+<p><strong>核心方法</strong>：把条件信息 \(y\)（如类别标签）同时注入生成器与判别器：</p>
+<div class="math-block">\[\min_G\max_D\;V(D,G)=\mathbb{E}_{x\sim p_{data}}\big[\log D(x|y)\big]+\mathbb{E}_{z\sim p_z}\big[\log(1-D(G(z|y)))\big] \]</div>
+<p>实现上常用 embedding + concat：标签 \(y\) 先嵌入为向量，与噪声 \(z\) 拼接送入 \(G\)；同时将 \(y\) 经空间复制后与图像在通道维拼接送入 \(D\)。</p>
+<p><strong>实验结果</strong>：在 MNIST 上能稳定生成指定数字，生成质量在类别层面可控；分类器验证生成的数字标签与条件一致。</p>
+<p><strong>我的理解</strong>：CGAN 用最朴素的方式（拼接条件向量）实现了可控生成，是条件生成思想的起点。它的局限是条件形式简单（只支持离散标签/固定向量），难以描述复杂条件（如文字描述、属性组合），后续被 cVAE-GAN、StackGAN 等扩展。本实验（实验 5）将实现 <strong>GAN 与 CGAN</strong>，对比随机生成与指定标签生成的效果。</p>
+<hr />
+<h3 id="59980860">6. Image-to-Image Translation with Conditional Adversarial Networks（Pix2Pix）</h3>
+<ul>
+<li><strong>作者/机构</strong>：Phillip Isola 等（UC Berkeley），2017 年，arXiv:1611.07004</li>
+<li><strong>一句话</strong>：一个<strong>通用</strong>的条件 GAN 框架，把所有"图像到图像翻译"任务（草图→照片、日转夜、语义分割→街景等）统一为有监督的配对数据学习。</li>
+</ul>
+<p><strong>动机</strong>：图像翻译任务（从输入图像生成对应输出图像）种类繁多、每类都要专门设计损失函数，希望有一个通用框架解决所有这类问题。</p>
+<p><strong>核心方法</strong>：
+1. <strong>生成器用 U-Net</strong>：编码-解码结构 + 跳跃连接，保留输入图像的低层空间细节（这对图像翻译至关重要）；
+2. <strong>判别器用 PatchGAN</strong>：不再对整图输出一个真/假标量，而是对图像切分成 \(N\times N\) 个 patch 分别判真伪，既降低参数、又能模拟<strong>高频纹理</strong>损失（马尔可夫随机场假设）；
+3. <strong>损失 = GAN 对抗损失 + L1 重建损失</strong>：</p>
+<div class="math-block">\[\mathcal{L}= \mathcal{L}_{cGAN}(G,D)+\lambda\,\mathbb{E}\big[\lVert y-G(x)\rVert_1\big] \]</div>
+<p>L1 项负责"粗"结构保真（比 L2 更锐利），GAN 项负责"细"纹理逼真，两者互补。</p>
+<p><strong>实验结果</strong>：在 facades、maps、cityscapes、edges2shoes 等 9 个任务上统一框架均取得当时最佳效果；L1 与 GAN 的组合显著优于只用其中一种。</p>
+<p><strong>我的理解</strong>：Pix2Pix 是"条件 GAN + 结构化生成"的教科书实现，PatchGAN 的思想被后续大量图像生成工作沿用。它的前提是<strong>配对数据</strong>（输入输出一一对应），而现实中大量任务没有配对数据，这正是 CycleGAN 要解决的问题。</p>
+<hr />
+<h3 id="a5e94d78">7. Unpaired Image-to-Image Translation using Cycle-Consistent Adversarial Networks（CycleGAN）</h3>
+<ul>
+<li><strong>作者/机构</strong>：Jun-Yan Zhu 等（UC Berkeley），2017 年，arXiv:1703.10593</li>
+<li><strong>一句话</strong>：在<strong>没有配对数据</strong>的条件下做风格迁移，用"循环一致性损失"保证双向映射 \(G\circ F\approx \mathrm{Id}\)。</li>
+</ul>
+<p><strong>动机</strong>：Pix2Pix 需要配对数据，但很多翻译任务（马↔斑马、照片↔莫奈画）根本没有成对样本，只有两个独立集合。</p>
+<p><strong>核心方法</strong>：
+1. 两个生成器 \(G:X\rightarrow Y\)、\(F:Y\rightarrow X\) 和两个判别器 \(D_X,D_Y\)；
+2. <strong>对抗损失</strong>：让 \(G(x)\) 在 \(Y\) 域判别器看来与 \(Y\) 域真实样本不可区分；
+3. <strong>循环一致性损失</strong>（关键创新）：</p>
+<div class="math-block">\[\mathcal{L}_{cyc}(G,F)=\mathbb{E}_{x\sim X}\big[\lVert F(G(x))-x\rVert_1\big]+\mathbb{E}_{y\sim Y}\big[\lVert G(F(y))-y\rVert_1\big] \]</div>
+<p>要求"翻译过去再翻译回来"能还原原图，从而在没有配对的约束下锚定映射语义，防止生成器"自由发挥"；
+4. 总损失 = 两个对抗损失 + \(\lambda\cdot\)循环损失。</p>
+<p><strong>实验结果</strong>：在 horse↔zebra、photo↔Van Gogh/Monet、apple↔orange、季节迁移等任务上，无需配对即实现高质量风格迁移；消融实验表明去掉循环损失后映射完全崩溃。</p>
+<p><strong>我的理解</strong>：CycleGAN 用"循环"这个优雅的自我监督替代了配对监督，极大扩展了图像翻译的适用面，成为无监督风格迁移的代表作。局限是几何变形大、内容改变明显的任务仍易失败；其循环一致性思想后来也被用于视频、语音等多模态翻译。</p>
+<p>\newpage</p>
+<h1 id="bc1be13a">第二部分　论文阅读笔记（续）—— 目标检测</h1>
+<blockquote>
+<p>目标检测演进主线：two-stage（R-CNN → Fast R-CNN → Faster R-CNN → FPN）追求精度；
+one-stage（YOLO → SSD）追求速度。两条路线最终在精度-速度权衡中趋于融合。</p>
+</blockquote>
+<hr />
+<h3 id="0482dfa6">8. Rich feature hierarchies for accurate object detection and semantic segmentation（R-CNN）</h3>
+<ul>
+<li><strong>作者/机构</strong>：Ross Girshick 等（UC Berkeley），2014 年，arXiv:1311.2524</li>
+<li><strong>一句话</strong>：把 CNN 用于目标检测的开山之作：<strong>Selective Search 生成候选框 + CNN 提特征 + SVM 分类 + 回归微调</strong>。</li>
+</ul>
+<p><strong>动机</strong>：在 R-CNN 之前，目标检测由 DPM 等手工特征方法主导，性能多年停滞；CNN 在分类上已取得突破，但检测还面临"目标位置、尺寸、个数均未知"的挑战。</p>
+<p><strong>核心方法</strong>（three-step pipeline）：
+1. <strong>候选区域生成</strong>：Selective Search 在每张图上提取约 2000 个可能包含目标的区域（region proposal）；
+2. <strong>特征提取</strong>：把每个候选区域裁剪缩放到 \(227\times227\)，送入 CNN（AlexNet）得到 4096 维特征；
+3. <strong>分类与回归</strong>：每个区域的特征分别用类别 SVM 判断"是不是目标、是哪类"；再用线性回归微调边界框位置。</p>
+<p><strong>关键技巧</strong>：预训练 + 微调（先在 ImageNet 预训练，再在检测数据上微调分类器）；使用 NMS 去重。</p>
+<p><strong>实验结果</strong>：PASCAL VOC 2010 上 mAP 从 DPM 的 33.4% 提升到 53.3%，性能翻倍级提升，定义了两阶段检测范式。</p>
+<p><strong>局限</strong>（也为后续工作留了方向）：
+- 每张图 2000 个候选区域都要独立过一遍 CNN，<strong>重复计算严重</strong>，一张图约 47 秒，无法实时；
+- 训练流程繁琐（SVM 与 CNN 特征分离，需要分阶段训练）。</p>
+<p><strong>我的理解</strong>：R-CNN 的意义是"把检测问题拆成可复用的分类问题"，用数据驱动特征替代手工特征。其性能瓶颈（重复卷积、多阶段训练）直接催生了 Fast R-CNN。</p>
+<hr />
+<h3 id="26e4c2c0">9. Fast R-CNN</h3>
+<ul>
+<li><strong>作者/机构</strong>：Ross Girshick（Microsoft Research），2015 年，arXiv:1504.08083</li>
+<li><strong>一句话</strong>：用 <strong>RoI Pooling</strong> 让整图只过一次 CNN，把候选区域的特征提取从"2000 次独立卷积"合并为"1 次共享卷积"，并统一了训练流程。</li>
+</ul>
+<p><strong>动机</strong>：R-CNN 重复卷积太慢、多阶段训练繁琐。能否让整图只算一遍特征，候选区域共享？</p>
+<p><strong>核心方法</strong>：
+1. <strong>整图单次卷积</strong>：整幅图过 CNN 得到整张特征图；
+2. <strong>RoI Pooling</strong>：把每个候选区域在特征图上对应的子区域，池化为固定尺寸（如 \(7\times7\)），再送入全连接分支；
+3. <strong>多任务联合训练</strong>：一个网络同时输出<strong>分类 softmax + 边界框回归</strong>，损失 = 分类损失 + 平滑 L1 回归损失，端到端训练，不再分阶段。</p>
+<p><strong>实验结果</strong>：训练速度较 R-CNN 快约 9 倍，推理快约 25 倍（VOC2007 测试，GPU），精度 mAP 66% 高于 R-CNN 的 66.0%——又快又好。</p>
+<p><strong>我的理解</strong>：RoI Pooling 是"共享特征 + 区域对齐"的关键设计，解决了特征复用与可变尺寸两大难题。但候选框仍由外部 Selective Search 生成，且 CPU 上很慢——"生成候选框"成为新的瓶颈，引出 Faster R-CNN。</p>
+<hr />
+<h3 id="222a8078">10. Faster R-CNN: Towards Real-Time Object Detection with Region Proposal Networks</h3>
+<ul>
+<li><strong>作者/机构</strong>：Shaoqing Ren, Kaiming He, Ross Girshick, Jian Sun，2015 年，arXiv:1506.01497</li>
+<li><strong>一句话</strong>：用<strong>区域提议网络（RPN）</strong>替代 Selective Search，把候选框生成也交给神经网络，实现检测全流程端到端、近实时的两阶段检测器。</li>
+</ul>
+<p><strong>动机</strong>：Fast R-CNN 中候选框生成（Selective Search）仍是 CPU 瓶颈。既然卷积特征已经算好，何不直接在特征图上"预测"哪些区域可能是目标？</p>
+<p><strong>核心方法</strong>：
+1. <strong>RPN（Region Proposal Network）</strong>：在共享特征图上，用一个 \(3\times3\) 滑窗 + 两个分支（分类层：是否有目标；回归层：边界框偏移），配合<strong>锚点（anchor）</strong>机制——在特征图每个位置预设多种尺度和长宽比的锚框（常见 3 尺度 × 3 比例 = 9 个）；
+2. <strong>锚点</strong>是关键创新：让网络预测"预设锚框的偏移"而非绝对坐标，大幅降低回归难度；
+3. <strong>共享卷积特征</strong>：RPN 与 Fast R-CNN 共享底层特征，两阶段联合/交替训练，端到端优化。</p>
+<p><strong>实验结果</strong>：VOC2007 mAP 73.2%，单张 GPU 推理约 0.2 秒（接近实时），比 Fast R-CNN 快 10 倍；候选框质量也更高。</p>
+<p><strong>我的理解</strong>：Faster R-CNN 使"候选框生成"学习化，anchor 机制成为现代检测器（包括 one-stage）的通用基石。至此 two-stage 路线（RPN 提框 → RoI 精修）定型，是后续 Mask R-CNN、FPN 等工作的基础。</p>
+<hr />
+<h3 id="53c40530">11. Feature Pyramid Networks for Object Detection（FPN）</h3>
+<ul>
+<li><strong>作者/机构</strong>：Tsung-Yi Lin 等（Facebook AI Research），2017 年，arXiv:1612.03144</li>
+<li><strong>一句话</strong>：构建<strong>多尺度特征金字塔</strong>，让每个尺度（浅层→深层）都获得强语义信息，从而同时检测大小差异很大的目标。</li>
+</ul>
+<p><strong>动机</strong>：目标检测中物体尺度差异巨大（小人脸 vs 整辆卡车）。深度 CNN 中<strong>浅层特征分辨率高但语义弱</strong>、<strong>深层特征语义强但分辨率低</strong>，单一顶层特征无法同时兼顾小目标与大目标。</p>
+<p><strong>核心方法</strong>（top-down + lateral connections）：
+1. <strong>自顶向下路径</strong>：从最高层（语义最强、分辨率最低）逐层上采样，向低层传播强语义；
+2. <strong>横向连接</strong>：每层上采样结果与对应层的自底向上特征做 \(1\times1\) 卷积降维后<strong>逐元素相加</strong>，融合高分辨率细节与高层语义；
+3. 在金字塔的每一层独立做预测（在 Faster R-CNN 上就是每层跑 RPN + RoI Pooling），小目标用浅层、大目标用深层。</p>
+<p><strong>实验结果</strong>：在 Faster R-CNN 基础上加 FPN，COCO mAP 提升约 2-3 个点；尤其<strong>小目标（AP_S）提升显著</strong>（+4 个点以上），成为后续检测器（RetinaNet、Mask R-CNN）的标准组件。</p>
+<p><strong>我的理解</strong>：FPN 的价值是"把天然存在的多尺度金字塔用横向连接补强语义"，用很小的参数代价换来了多尺度鲁棒性。它说明架构设计（如何组织特征）与模型容量同样重要。</p>
+<hr />
+<h3 id="d99b45ee">12. You Only Look Once: Unified, Real-Time Object Detection（YOLOv1）</h3>
+<ul>
+<li><strong>作者/机构</strong>：Joseph Redmon 等（University of Washington），2016 年，arXiv:1506.02640</li>
+<li><strong>一句话</strong>：把检测建模为<strong>一次回归</strong>：整图只看一次，直接在网格上预测边界框和类别，是 one-stage（单阶段）检测的开山之作。</li>
+</ul>
+<p><strong>动机</strong>：two-stage 方法（R-CNN 系列）速度不够快，难以实时。能否把"提框+分类"合并为一次前向回归，直接输出检测结果？</p>
+<p><strong>核心方法</strong>：
+1. 把输入图像划分为 \(S\times S\) 网格（\(S=7\)）；
+2. <strong>每个网格单元</strong>负责预测 \(B\) 个边界框（\(B=2\)），每个框输出 \((x,y,w,h,confidence)\)，其中 \(confidence\) 表示"框内含有目标的概率 × 框与真实框的 IoU"；
+3. 每个网格同时预测 \(C\) 类条件类别概率（\(C=20\)，VOC）；
+4. 网络（24 卷积 + 2 全连接）输出维度 \(S\times S\times(B\cdot5+C)\)，一次前向即可得到全部检测结果；
+5. 损失 = 坐标损失 + 含目标置信度损失 + 无目标置信度损失 + 分类损失，分项加权。</p>
+<p><strong>实验结果</strong>：VOC2007 上 mAP 63.4%，在 Titan X 上 <strong>45 FPS</strong>（快速版 155 FPS），比实时 two-stage 方法快一个量级。</p>
+<p><strong>局限</strong>：
+- 每个网格只能预测 B 个框，<strong>密集小目标易漏检</strong>；
+- 网格固定（7×7），对聚集目标表现差；
+- 定位误差较大（v1 主要问题）。</p>
+<p><strong>我的理解</strong>：YOLOv1 用"分而治之 + 全局回归"实现了实时检测，其"看一眼就出结果"的思想与 two-stage 的"先看再看"形成鲜明对比。后续 YOLO 系列针对小目标与定位持续改进，演变为最流行的工业检测器。</p>
+<hr />
+<h3 id="6ba59b0f">13. SSD: Single Shot MultiBox Detector</h3>
+<ul>
+<li><strong>作者/机构</strong>：Wei Liu 等，2016 年，arXiv:1512.02325</li>
+<li><strong>一句话</strong>：在<strong>多个不同尺度的特征图</strong>上做密集的锚框回归，既保持 YOLO 的单阶段速度，又显著改善小目标与定位精度。</li>
+</ul>
+<p><strong>动机</strong>：YOLO 速度虽快，但固定 7×7 网格漏检小目标、定位不准；Faster R-CNN 精度高但慢。SSD 想"两全其美"——one-stage 的速度 + 多尺度特征带来的精度。</p>
+<p><strong>核心方法</strong>：
+1. <strong>多尺度特征图预测</strong>：在基础网络（VGG-16）后接若干卷积层，得到分辨率递减的特征图（38×38、19×19、10×10、5×5、3×3、1×1），在每层都做检测预测——浅层负责小目标，深层负责大目标；
+2. <strong>锚框（default boxes）</strong>：每个位置预设多种尺度和长宽比的锚框，与 Faster R-CNN 的 anchor 类似但覆盖多尺度、多长宽比；
+3. <strong>匹配策略</strong>：每个真实框与 IoU 最大的锚框匹配为正样本，IoU 大于阈值（0.5）的锚框也可为正样本；
+4. <strong>难例挖掘 + 数据增强</strong>：控制正负样本比例 1:3；使用随机裁剪、缩放等增强提升鲁棒性。</p>
+<p><strong>实验结果</strong>：VOC2007 mAP <strong>74.3%</strong>，FPS 59（Titan X）——精度超过 Faster R-CNN（73.2%）的同时速度快近 3 倍；COCO 上也优于当时方法。</p>
+<p><strong>我的理解</strong>：SSD 融合了两条路线的优点（多尺度 + 锚框 + 单阶段），是 one-stage 检测精度首次反超 two-stage 的代表作。它证明"多尺度密集预测"是 one-stage 精度提升的关键，直接启发了 RetinaNet（FPN 版 one-stage）。</p>
+<hr />
+<h2 id="9a42fc15">目标检测技术脉络总结</h2>
+<pre><code>two-stage（精度优先）：
+  R-CNN(2014) → Fast R-CNN(2015, RoI池化) → Faster R-CNN(2015, RPN+anchor) → FPN(2017, 多尺度金字塔)
+one-stage（速度优先）：
+  YOLOv1(2016, 网格回归) → SSD(2016, 多尺度锚框)
+</code></pre>
+<table>
+<thead>
+<tr>
+<th>模型</th>
+<th>范式</th>
+<th>候选框来源</th>
+<th>特征利用</th>
+<th>VOC2007 mAP</th>
+<th>速度</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>R-CNN</td>
+<td>two-stage</td>
+<td>Selective Search</td>
+<td>每框独立 CNN</td>
+<td>66.0%</td>
+<td>~0.5 FPS</td>
+</tr>
+<tr>
+<td>Fast R-CNN</td>
+<td>two-stage</td>
+<td>Selective Search</td>
+<td>全图共享 + RoI池化</td>
+<td>70.0%</td>
+<td>~0.5 FPS（快25倍）</td>
+</tr>
+<tr>
+<td>Faster R-CNN</td>
+<td>two-stage</td>
+<td>RPN（学习）</td>
+<td>共享特征 + anchor</td>
+<td>73.2%</td>
+<td>~5 FPS</td>
+</tr>
+<tr>
+<td>YOLOv1</td>
+<td>one-stage</td>
+<td>无（网格回归）</td>
+<td>全局一次回归</td>
+<td>63.4%</td>
+<td>45 FPS</td>
+</tr>
+<tr>
+<td>SSD</td>
+<td>one-stage</td>
+<td>锚框（多尺度）</td>
+<td>多尺度特征图预测</td>
+<td>74.3%</td>
+<td>59 FPS</td>
+</tr>
+</tbody>
+</table>
+<blockquote>
+<p>注：速度数值随硬件与实现差异而不同，上表反映论文报告口径的数量级关系。</p>
+</blockquote>
+<p>\newpage</p>
+<h1 id="c2676beb">第三部分　实验报告</h1>
+<h2 id="5379de53">1. 实验环境</h2>
+<table>
+<thead>
+<tr>
+<th>项目</th>
+<th>配置</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>操作系统</td>
+<td>Windows 10 Enterprise（64 位）</td>
+</tr>
+<tr>
+<td>编程语言</td>
+<td>Python 3.13（Anaconda）</td>
+</tr>
+<tr>
+<td>深度学习框架</td>
+<td>PyTorch 2.13.0（CPU 版）、torchvision 0.28.0</td>
+</tr>
+<tr>
+<td>计算设备</td>
+<td>CPU（无 GPU），多核并行</td>
+</tr>
+<tr>
+<td>其他依赖</td>
+<td>NumPy、Matplotlib、PIL</td>
+</tr>
+<tr>
+<td>代码仓库</td>
+<td><code>code/</code> 目录，公共框架 <code>common.py</code>，各实验 <code>exp1~exp8.py</code></td>
+</tr>
+</tbody>
+</table>
+<h2 id="a966dee5">2. 实验总体设计</h2>
+<h3 id="b4ae259c">2.1 数据集</h3>
+<table>
+<thead>
+<tr>
+<th>数据集</th>
+<th>内容</th>
+<th>尺寸</th>
+<th>训练/测试</th>
+<th>用途</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>MNIST-digits</td>
+<td>手写数字 0-9</td>
+<td>28×28 灰度</td>
+<td>60k / 10k</td>
+<td>分类、蒸馏、AE、GAN</td>
+</tr>
+<tr>
+<td>MNIST-Fashion</td>
+<td>10 类服饰</td>
+<td>28×28 灰度</td>
+<td>60k / 10k</td>
+<td>分类、蒸馏、AE</td>
+</tr>
+<tr>
+<td>CIFAR-10</td>
+<td>10 类自然图像</td>
+<td>32×32 彩色</td>
+<td>50k / 10k</td>
+<td>多通道 LeNet-5</td>
+</tr>
+<tr>
+<td>ImageNet（用户自备）</td>
+<td>1000 类</td>
+<td>224×224</td>
+<td>—</td>
+<td>预训练模型验证</td>
+</tr>
+</tbody>
+</table>
+<h3 id="891ff003">2.2 统一口径</h3>
+<ul>
+<li><strong>固定随机种子</strong>：全部实验 <code>set_seed(42)</code>，保证可复现；</li>
+<li><strong>优化器</strong>：SGD（momentum=0.9）用于分类/蒸馏，Adam（lr=2e-4）用于生成式模型；</li>
+<li><strong>评估指标</strong>：分类用测试集准确率（top-1），AE 用重建 MSE，GAN 用生成图像质量（可视化 + D/G loss）；</li>
+<li><strong>公平性设计</strong>：LeNet-5 与 MLP 采用相同的 epoch、优化器与学习率，仅结构不同。</li>
+</ul>
+<h2 id="9a5bb08f">3. 实验一：LeNet-5 与全连接网络的对比</h2>
+<h3 id="cdb172b5">3.1 设计目的</h3>
+<p>验证 CNN 相对全连接网络在图像任务上的两个核心优势：
+1. <strong>精度更高</strong>：卷积的局部连接与权值共享更契合图像空间结构；
+2. <strong>参数效率更高</strong>：以更少参数取得更好效果。</p>
+<h3 id="5829bf50">3.2 模型与超参</h3>
+<table>
+<thead>
+<tr>
+<th>模型</th>
+<th>结构</th>
+<th>参数量(MNIST)</th>
+<th>参数量(CIFAR-10)</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>LeNet-5</td>
+<td>C(6,5×5)→P→C(16,5×5)→P→FC(120,84,10)，ReLU</td>
+<td>44,426</td>
+<td>62,006</td>
+</tr>
+<tr>
+<td>MLP</td>
+<td>784→200→100→10（CIFAR 用 512→256→10）</td>
+<td>178,110</td>
+<td>1,707,274</td>
+</tr>
+</tbody>
+</table>
+<p>训练配置：SGD(lr=1e-2, momentum=0.9)；MNIST/Fashion 各 8 epochs，CIFAR-10 各 15 epochs。</p>
+<h3 id="8d63e3df">3.3 实验结果</h3>
+<blockquote>
+<p>训练至收敛（epoch 数：MNIST 8、Fashion 15、CIFAR-10 20，SGD lr=1e-2），曲线末端已趋于平稳。</p>
+</blockquote>
+<p><strong>MNIST-digits（8 epochs）：</strong></p>
+<table>
+<thead>
+<tr>
+<th>模型</th>
+<th>参数量</th>
+<th>测试准确率</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>LeNet-5</td>
+<td>44,426</td>
+<td><strong>0.9879（98.79%）</strong></td>
+</tr>
+<tr>
+<td>MLP</td>
+<td>178,110</td>
+<td>0.9723（97.23%）</td>
+</tr>
+</tbody>
+</table>
+<p><img alt="MNIST 训练曲线" src="../results/exp1_mnist_curve.png" /></p>
+<p><strong>MNIST-Fashion（15 epochs，已收敛）：</strong></p>
+<table>
+<thead>
+<tr>
+<th>模型</th>
+<th>参数量</th>
+<th>测试准确率</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>LeNet-5</td>
+<td>44,426</td>
+<td><strong>0.8925（89.25%）</strong></td>
+</tr>
+<tr>
+<td>MLP</td>
+<td>178,110</td>
+<td>0.8785（87.85%）</td>
+</tr>
+</tbody>
+</table>
+<p><img alt="Fashion 训练曲线" src="../results/exp1_fashion_curve.png" /></p>
+<p><strong>CIFAR-10（20 epochs，多通道输入，已收敛）：</strong></p>
+<table>
+<thead>
+<tr>
+<th>模型</th>
+<th>参数量</th>
+<th>测试准确率</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>LeNet-5</td>
+<td>62,006</td>
+<td><strong>0.6643（66.43%）</strong></td>
+</tr>
+<tr>
+<td>MLP</td>
+<td>1,707,274</td>
+<td>0.4912（49.12%）</td>
+</tr>
+</tbody>
+</table>
+<p><img alt="CIFAR-10 训练曲线" src="../results/exp1_cifar10_curve.png" /></p>
+<h3 id="ed346308">3.4 分析与结论</h3>
+<ol>
+<li><strong>三个数据集上 LeNet-5 全面优于 MLP</strong>：MNIST +1.56pp、Fashion +1.40pp、CIFAR-10 <strong>+17.31pp</strong>。数据集越复杂、空间结构越重要，CNN 的优势越明显；</li>
+<li><strong>参数效率</strong>：CIFAR-10 上 MLP 参数量是 LeNet-5 的 <strong>27.5 倍</strong>，精度却低 17 个百分点。卷积的局部连接 + 权重共享使 CNN 用更少参数提取了更有用的特征；</li>
+<li><strong>CIFAR-10 上的巨大差距</strong>（66.4% vs 49.1%）说明：自然图像的空间局部性（相邻像素强相关）对全连接网络是"灾难性"的——MLP 逐像素展开破坏了空间结构，且 170 万参数在 5 万样本上严重过拟合、泛化差；而 CNN 的卷积归纳偏置天然适配图像。增大 epoch 后 MLP 反而从 50.4% 略降到 49.1%，是过拟合的直接表现；</li>
+<li><strong>训练充分性</strong>：初版 Fashion（8 epoch）与 CIFAR（15 epoch）曲线末端仍在上升，未充分收敛；将 epoch 增至 15 / 20 后，两者最终精度分别提升 0.57pp / 1.82pp，曲线末端趋于平稳，结论不变——CNN 的优势在收敛后更加稳固；</li>
+<li>MLP 在 MNIST 上也达到 97%+，因为手写数字是"低方差"的简单任务，结构先验的重要性降低——<strong>CNN 的价值随任务复杂度上升而放大</strong>。</li>
+</ol>
+<h2 id="1ab5cec9">4. 实验二：LeNet-5 超参数对比</h2>
+<h3 id="6503d177">4.1 设计</h3>
+<p>在 MNIST 上以"单变量"原则对比 6 个超参数：卷积核大小（3/5/7）、池化种类（max/avg）、池化大小（2/3）、通道个数（6,16 / 12,32）、激活函数（relu/tanh/sigmoid）、stride（1/2）。为隔离单一变量影响，核大小对比时用 <code>padding=k//2</code> 保持特征图尺寸一致；每配置训练 4 epochs。</p>
+<h3 id="9bcbed79">4.2 结果汇总（MNIST，各 4 epochs）</h3>
+<table>
+<thead>
+<tr>
+<th>超参数</th>
+<th>取值</th>
+<th>测试准确率</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>卷积核大小</td>
+<td>3×3</td>
+<td>0.9823</td>
+</tr>
+<tr>
+<td>卷积核大小</td>
+<td>5×5（基线）</td>
+<td>0.9854</td>
+</tr>
+<tr>
+<td>卷积核大小</td>
+<td>7×7</td>
+<td><strong>0.9882</strong></td>
+</tr>
+<tr>
+<td>池化种类</td>
+<td>max</td>
+<td><strong>0.9858</strong></td>
+</tr>
+<tr>
+<td>池化种类</td>
+<td>avg</td>
+<td>0.9812</td>
+</tr>
+<tr>
+<td>池化大小</td>
+<td>2×2</td>
+<td><strong>0.9858</strong></td>
+</tr>
+<tr>
+<td>池化大小</td>
+<td>3×3</td>
+<td>0.9845</td>
+</tr>
+<tr>
+<td>通道个数</td>
+<td>(6,16)</td>
+<td>0.9855</td>
+</tr>
+<tr>
+<td>通道个数</td>
+<td>(12,32)</td>
+<td><strong>0.9905</strong></td>
+</tr>
+<tr>
+<td>激活函数</td>
+<td>relu</td>
+<td><strong>0.9867</strong></td>
+</tr>
+<tr>
+<td>激活函数</td>
+<td>tanh</td>
+<td>0.9831</td>
+</tr>
+<tr>
+<td>激活函数</td>
+<td>sigmoid</td>
+<td>0.1135（几乎不收敛）</td>
+</tr>
+<tr>
+<td>stride</td>
+<td>1</td>
+<td><strong>0.9857</strong></td>
+</tr>
+<tr>
+<td>stride</td>
+<td>2</td>
+<td>0.9768</td>
+</tr>
+</tbody>
+</table>
+<p><img alt="超参数对比曲线" src="../results/exp2_hyperparam_curves.png" /></p>
+<h3 id="c1010534">4.3 分析与结论</h3>
+<ol>
+<li><strong>卷积核大小：越大越好（7×7 &gt; 5×5 &gt; 3×3）</strong>。更大的感受野在 MNIST 上能捕获更完整的笔画结构；但 7×7 参数量更大、计算更贵，实际中 3×3 堆叠（VGG）是更优的折中；</li>
+<li><strong>Max Pooling 优于 Average Pooling（+0.46pp）</strong>：max 池化保留局部最强响应，利于特征边缘/纹理提取，这也是主流的默认选择；</li>
+<li><strong>池化窗口 2×2 略优于 3×3</strong>：更大的池化窗口过度下采样，丢失细节；</li>
+<li><strong>通道数翻倍（6,16→12,32）提升显著（+0.5pp）</strong>：更多滤波器＝更多特征维度，但代价是参数与计算量增长，需在容量与效率间权衡；</li>
+<li><strong>激活函数差异巨大</strong>：ReLU &gt; tanh ≫ sigmoid。<strong>sigmoid 几乎不收敛（11.35%）</strong>，原因是其输出饱和区导数趋近 0，在多层网络中梯度逐层衰减（梯度消失），深层权重几乎不更新——这是深度学习论文普遍弃用 sigmoid 改用 ReLU 的直接实验证据；</li>
+<li><strong>stride=2 降低精度（-0.89pp）</strong>：stride 增大导致特征图快速缩小，信息在卷积早期被过多丢弃。</li>
+</ol>
+<h2 id="bffc49b3">5. 实验三：知识蒸馏</h2>
+<h3 id="2508295d">5.1 设计</h3>
+<p>教师网络为 LeNet-5（从实验一直接复用），学生网络为更小的 MLP(128→64)。对比学生网络三种情况：
+1. 独立训练（只用硬标签）；
+2. 蒸馏训练（教师软标签 + 硬标签，温度 T=4，权重 α=0.5）。</p>
+<blockquote>
+<p>蒸馏损失：\(\mathcal{L}=\alpha\cdot\mathrm{CE}(q_s,y)+(1-\alpha)\cdot T^2\cdot D_{KL}(q_t^T\parallel q_s^T)\)</p>
+</blockquote>
+<h3 id="0ed0adbc">5.2 实验结果</h3>
+<blockquote>
+<p>教师 LeNet-5 用<strong>完整训练集</strong>训练；学生 MLP(32) 只使用 <strong>10% 训练数据</strong>。
+经超参扫描（<code>exp3_tune.py</code>）确定：温度越低、硬标签权重越高越优，最终采用 <strong>T=1, alpha=0.7</strong>。</p>
+</blockquote>
+<p><strong>MNIST-digits（学生训练数据 6000 张）：</strong></p>
+<table>
+<thead>
+<tr>
+<th>模型</th>
+<th>参数量</th>
+<th>训练数据量</th>
+<th>测试准确率</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>教师 LeNet-5</td>
+<td>44,426</td>
+<td>60,000（完整）</td>
+<td>98.76%</td>
+</tr>
+<tr>
+<td>学生 MLP（独立训练）</td>
+<td>25,450</td>
+<td>6,000（10%）</td>
+<td>89.51%</td>
+</tr>
+<tr>
+<td>学生 MLP（蒸馏训练）</td>
+<td>25,450</td>
+<td>6,000（10%）</td>
+<td><strong>90.51%（+1.00pp）</strong></td>
+</tr>
+</tbody>
+</table>
+<p><strong>MNIST-Fashion（学生训练数据 6000 张）：</strong></p>
+<table>
+<thead>
+<tr>
+<th>模型</th>
+<th>参数量</th>
+<th>训练数据量</th>
+<th>测试准确率</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>教师 LeNet-5</td>
+<td>44,426</td>
+<td>60,000（完整）</td>
+<td>88.68%</td>
+</tr>
+<tr>
+<td>学生 MLP（独立训练）</td>
+<td>25,450</td>
+<td>6,000（10%）</td>
+<td>81.98%</td>
+</tr>
+<tr>
+<td>学生 MLP（蒸馏训练）</td>
+<td>25,450</td>
+<td>6,000（10%）</td>
+<td><strong>82.09%（+0.11pp）</strong></td>
+</tr>
+</tbody>
+</table>
+<p><img alt="MNIST 蒸馏对比" src="../results/exp3_distill_mnist.png" />
+<img alt="Fashion 蒸馏对比" src="../results/exp3_distill_fashion.png" /></p>
+<h3 id="c21bdc2b">5.3 分析与结论</h3>
+<ol>
+<li><strong>蒸馏有效</strong>：在训练数据只有 10% 的困难场景下，MNIST 上蒸馏学生比独立训练高 <strong>1.00 个百分点</strong>（89.51%→90.51%），说明教师 softmax 分布携带的类间结构信息确实弥补了数据不足——与 Hinton 论文"用教师软标签训练可等效于更多数据"的结论一致；</li>
+<li><strong>提升幅度有限的原因</strong>：统计了教师 softmax 的平均最大概率——MNIST 教师高达 <strong>99.06%</strong>，即教师对每个样本都"过于自信"，软化后的分布几乎退化为硬标签，能提供的"暗知识"极少；Fashion 教师为 88.71%，信息稍多但学生 MLP(32) 容量小、任务更难，提升空间被压缩；</li>
+<li><strong>蒸馏的最佳使用场景</strong>：本实验说明，蒸馏的收益取决于 <strong>"教师知道但标注没告诉学生的信息量"</strong>。在 MNIST 这类类别简单、教师置信度趋近 1 的任务上收益有限；而在 ImageNet 等 1000 类、类别高度相似的大规模任务上（教师平均置信度低、类间层级结构丰富），蒸馏提升显著。这也解释了为什么知识蒸馏最常用于<strong>模型压缩</strong>与<strong>大规模分类</strong>场景；</li>
+<li><strong>温度的超参规律</strong>：扫描显示 T 越低越好（T=1 最优）——高温度会过度平滑本已尖锐的教师分布，进一步稀释信息。当教师置信度低（信息丰富）时，适当升温（如 T=2~4）才有助于暴露类间相似度。</li>
+</ol>
+<h2 id="35545080">6. 实验四：AutoEncoder（CNN-AE vs 全连接 AE）</h2>
+<h3 id="b303f2d3">6.1 设计</h3>
+<p>在 MNIST / Fashion 上对比两种自编码器（15 epochs，MSE 重建损失）：
+- <strong>CNN-AE</strong>：卷积编码（32→64→64→128 通道、下采样）+ 128×4×4→64 潜在向量 + 反卷积解码；
+- <strong>MLP-AE</strong>：784→256→64→256→784。</p>
+<h3 id="809ad54d">6.2 结果（15 epochs，MSE 重建损失，输入 [0,1]）</h3>
+<table>
+<thead>
+<tr>
+<th>数据集</th>
+<th>CNN-AE 重建 MSE</th>
+<th>MLP-AE 重建 MSE</th>
+<th>CNN 相对优势</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>MNIST</td>
+<td><strong>0.00180</strong></td>
+<td>0.00335</td>
+<td>低 46%</td>
+</tr>
+<tr>
+<td>MNIST-Fashion</td>
+<td><strong>0.00512</strong></td>
+<td>0.00744</td>
+<td>低 31%</td>
+</tr>
+</tbody>
+</table>
+<p><strong>重构可视化（上：原图 / 中：CNN-AE 重构 / 下：MLP-AE 重构）：</strong></p>
+<p><img alt="MNIST 重构对比" src="../results/exp4_recon_mnist.png" /></p>
+<p><img alt="Fashion 重构对比" src="../results/exp4_recon_fashion.png" /></p>
+<p><strong>训练损失曲线：</strong></p>
+<p><img alt="MNIST AE 损失" src="../results/exp4_loss_mnist.png" />
+<img alt="Fashion AE 损失" src="../results/exp4_loss_fashion.png" /></p>
+<h3 id="62cd3e51">6.3 分析与结论</h3>
+<ol>
+<li><strong>CNN-AE 重建质量全面优于 MLP-AE</strong>：两个数据集上 MSE 均降低 30%-46%，可视化可见 CNN-AE 重构的数字/服饰轮廓更清晰、细节保留更完整；</li>
+<li><strong>CNN 结构的优势来源</strong>：
+   - 卷积的<strong>局部感受野 + 权值共享</strong>天然适合图像空间结构，编码器能提取有意义的局部特征（边缘、纹理）；
+   - <strong>下采样 + 反卷积</strong>的编码-解码结构保留了空间拓扑关系，比全连接"展平-重排"更符合图像的平移不变性；</li>
+<li><strong>MLP-AE 的劣势</strong>：全连接把 28×28 像素展平成 784 维向量，破坏了像素间的空间邻接关系，压缩到 64 维潜在空间时会丢失大量空间细节；</li>
+<li><strong>潜在空间的局限</strong>：本实验验证了 AE 的重建能力，但其潜在空间无约束（不像 VAE 有正态先验），无法直接用于采样生成新样本——这正是后续 GAN 实验（实验五）要解决的问题。</li>
+</ol>
+<h3 id="004e3e2d">6.4 延伸拓展：潜在空间的"背诵 vs 理解"验证（插值实验）</h3>
+<p>重建好可能有两种截然不同的原因：<strong>死记硬背</strong>（记住每张图怎么"抄"）与<strong>真学到了结构</strong>（理解了笔画规律）。前者换输入就泛化差、潜在空间是散乱的点；后者泛化好、潜在空间连续且有语义。为区分二者，本实验额外做了两个可视化验证（不在任务必做范围内，用于检验 AE 内部学到的表征质量）。</p>
+<p><strong>① 潜在空间分布（PCA 降维）</strong></p>
+<p>把 MNIST 测试集中 0-9 各 30 张图编码为 64 维潜在向量 z，再用 PCA 降到 2 维绘制散点图：</p>
+<p><img alt="潜在空间分布" src="../results/exp4_latent_space.png" /></p>
+<p>可以看到：<strong>同一数字的样本聚成紧密的一团，不同数字的团互相分离</strong>，例如数字 7 与 3 的团中心相距很远。这说明 z 按"内容语义"而非"像素位置"组织——网络确实学到了"这是什么数字"的表征，而不是把图像当字典逐张抄写。</p>
+<p><strong>② 潜在空间插值（7 → 3）</strong></p>
+<p>取一个"7"的 z₇ 与一个"3"的 z₃，在两者之间线性插值（t=0 → t=1），逐步解码成图：</p>
+<p><img alt="潜在空间插值" src="../results/exp4_interp.png" /></p>
+<p>插值中间帧呈现"7 的笔画逐渐形变为 3"的过渡，而非随机乱码，进一步印证 z 空间是<strong>连续且有结构的</strong>——这正是"表征学习"的核心价值。<strong>同时</strong>，中间帧仍明显模糊、不自然，说明 AE 的 z 空间缺少分布约束（任意中间点并不保证是"好看的图"），这是 AE 的直接局限，也正是 <strong>VAE（为 z 施加正态先验）</strong> 与 <strong>GAN（用判别器逼真）</strong> 的改进动机。</p>
+<blockquote>
+<p>小结：插值实验不产生报告必需的数据，却是检验"AE 是理解还是背诵"的试金石，同时直观暴露了 AE 潜在空间无约束的缺陷，为后续 VAE / GAN 的学习提供了动机。</p>
+</blockquote>
+<h2 id="7a304d2f">7. 实验五：GAN 与 CGAN</h2>
+<h3 id="4421ea06">7.1 设计</h3>
+<p>在 MNIST 上实现 GAN 与条件 GAN（CGAN），生成器 100 维噪声 → 28×28 图像（反卷积上采样），判别器为卷积二分类网络；CGAN 将类别标签 one-hot 嵌入分别注入生成器与判别器。Adam(2e-4) 训练。</p>
+<h3 id="2b36d723">7.2 结果</h3>
+<p>在 MNIST 上各训练 15 epochs（Adam lr=2e-4，CPU 环境）。生成器与判别器的对抗损失曲线、最终生成样本如下：</p>
+<table>
+<thead>
+<tr>
+<th>模型</th>
+<th>判别器最终损失</th>
+<th>生成器最终损失</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>GAN</td>
+<td>0.312</td>
+<td>1.936</td>
+</tr>
+<tr>
+<td>CGAN</td>
+<td>0.728</td>
+<td>2.714</td>
+</tr>
+</tbody>
+</table>
+<p><strong>GAN 生成效果（随机噪声 → 数字）：</strong></p>
+<p><img alt="GAN 生成结果" src="../results/exp5_gan_mnist_final.png" /></p>
+<p><strong>CGAN 生成效果（按标签条件生成 0-9，每列对应一个数字）：</strong></p>
+<p><img alt="CGAN 生成结果" src="../results/exp5_cgan_mnist_final.png" /></p>
+<p><strong>训练曲线：</strong></p>
+<p><img alt="GAN 损失曲线" src="../results/exp5_gan_mnist_loss.png" />
+<img alt="CGAN 损失曲线" src="../results/exp5_cgan_mnist_loss.png" /></p>
+<h3 id="70697f37">7.3 分析与结论</h3>
+<ol>
+<li><strong>GAN 能生成可辨识的数字</strong>：经过 15 epochs 对抗训练，生成器学会了逼近 MNIST 数据分布，生成的数字在形状、笔触上与真实手写体相似，验证了 min-max 博弈训练的有效性；</li>
+<li><strong>CGAN 实现"按标签定向生成"</strong>：加入类别条件后，每一列生成的数字与对应标签一致（0-9 清晰可辨），体现了条件信息对生成内容的控制力——这是从"随机生成"到"可控生成"的关键一步；</li>
+<li><strong>CGAN 训练难度略高</strong>（D loss 0.73 &gt; GAN 的 0.31）：条件变量增加了判别器的输入信息，对抗收敛更慢，需要更多 epoch 才能达到与 GAN 相同的视觉质量；</li>
+<li><strong>训练不稳定性的观察</strong>：生成器损失（G loss）在两个模型中都出现波动而非单调下降，反映了 GAN 训练不稳定的典型特征（模式坍缩倾向、判别器-生成器能力失衡）。未来可尝试 WGAN 的 Wasserstein 距离、谱归一化等改进。</li>
+</ol>
+<h2 id="a6b14725">8. 实验六：预训练模型在 ImageNet 上的验证（完整完成）</h2>
+<h3 id="a8dab0a8">8.1 结构分析（参数量 / FLOPs / 存储）</h3>
+<table>
+<thead>
+<tr>
+<th>模型</th>
+<th>参数量</th>
+<th>单图 224² 推理 FLOPs</th>
+<th>存储大小（fp32）</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>AlexNet</td>
+<td>61.10M</td>
+<td>1.43 G</td>
+<td>244.4 MB</td>
+</tr>
+<tr>
+<td>VGG-16</td>
+<td>138.36M</td>
+<td>30.94 G</td>
+<td>553.4 MB</td>
+</tr>
+<tr>
+<td>ResNet-50</td>
+<td>25.56M</td>
+<td>8.18 G</td>
+<td>102.2 MB</td>
+</tr>
+</tbody>
+</table>
+<p><img alt="模型结构与复杂度对比" src="../results/exp6_model_comparison.png" /></p>
+<h3 id="f6507ca3">8.2 ImageNet 验证结果</h3>
+<p>使用 <strong>ImageNet-1k 官方验证集子集（每类 5 张，共 5000 张）</strong> 测试三种预训练模型（torchvision 预训练权重），评测 Top-1 / Top-5 准确率：</p>
+<table>
+<thead>
+<tr>
+<th>模型</th>
+<th>参数量</th>
+<th>Top-1 准确率</th>
+<th>Top-5 准确率</th>
+<th>5000 张推理耗时</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>AlexNet</td>
+<td>61.10M</td>
+<td>0.5672（56.72%）</td>
+<td>0.7904（79.04%）</td>
+<td>294 s</td>
+</tr>
+<tr>
+<td>VGG-16</td>
+<td>138.36M</td>
+<td>0.7224（72.24%）</td>
+<td>0.9046（90.46%）</td>
+<td>1788 s</td>
+</tr>
+<tr>
+<td>ResNet-50</td>
+<td>25.56M</td>
+<td><strong>0.7732（77.32%）</strong></td>
+<td><strong>0.9336（93.36%）</strong></td>
+<td>820 s</td>
+</tr>
+</tbody>
+</table>
+<p><img alt="ImageNet 准确率对比" src="../results/exp6_imagenet_accuracy.png" /></p>
+<p><img alt="ImageNet 预测示例（Top-5）" src="../results/exp6_imagenet_predictions.png" /></p>
+<h3 id="a4a61034">8.3 分析</h3>
+<ol>
+<li><strong>结果与官方（论文/torchvision 文档）高度一致</strong>：AlexNet ~56.5%、VGG-16 ~71.6%、ResNet-50 ~76.1%（官方均为完整 5 万张验证集），我们 5000 张子集的实测值与之吻合（56.7% / 72.2% / 77.3%），说明评测流程可靠；</li>
+<li><strong>模型容量与性能正相关，但效率差异显著</strong>：ResNet-50 参数最少（25.6M，仅为 VGG 的 1/5）、FLOPs 仅为 VGG 的 1/4，Top-1 却最高（77.3%），比 VGG 高 5 个百分点——<strong>Bottleneck + 残差连接实现了"更少的算力、更高的精度"</strong>；</li>
+<li><strong>VGG-16 效率最低</strong>：1.38 亿参数 + 31 GFLOPs，精度却不如参数更少的 ResNet-50，验证了"深而规整但不高效"的结论，也解释了它为何逐渐被 ResNet 取代；</li>
+<li><strong>Top-1 与 Top-5 的差距</strong>：约 16-22 个百分点，说明 ImageNet 1000 类中存在大量相似类别（如犬种），模型虽不能精确到第 1 名，但能识别到语义相近的类别——这也正是 softmax 分布携带"类间相似性"信息的来源，与实验三知识蒸馏的分析呼应；</li>
+<li>完整验证集（5 万张）可直接用 <code>python exp6_pretrained.py</code> 运行（数据已就绪于 <code>data/imagenet/val</code>）。</li>
+</ol>
+<h2 id="aac358c4">9. 选做实验（已完成）</h2>
+<h3 id="195c0b4a">9.1 Pix2Pix 风格迁移（边缘图 → 建筑立面）</h3>
+<p><strong>方法</strong>：条件 GAN（Isola 2017）——UNet 生成器（含跳跃连接保留空间细节）+ PatchGAN 判别器（70×70 分块判真伪）+ 损失 = GAN 对抗损失 + L1 重建损失（λ=100）。数据集：facades（400 张边缘图/建筑立面配对图，512×256）。</p>
+<p><strong>训练</strong>：CPU 环境 8 epochs，生成器损失从 46.97 降至 37.48（L1 分量占主导，符合 Pix2Pix 特征）。</p>
+<p><strong>生成效果</strong>（每行：输入边缘图 | 模型生成 | 真实建筑立面）：</p>
+<p><img alt="Pix2Pix 生成效果" src="../results/exp7_pix2pix_ep8.png" /></p>
+<p><strong>分析与结论</strong>：
+1. 模型学会从边缘骨架生成较逼真的建筑立面——窗户、墙体、屋顶轮廓得到还原，L1 项保证了结构对齐，PatchGAN 项改善了纹理真实感；
+2. 生成结果与真实图仍存在差异（颜色、细节不完美），因为仅 8 epochs 且 CPU 训练（论文为 200 epochs + GPU），也体现了 GAN 训练"慢热"的特点；
+3. 验证了 Pix2Pix"配对数据 + 条件 GAN + 结构化输出"的通用框架思想——同一套代码稍改数据即可迁移到其他图像翻译任务。</p>
+<h3 id="6f8ab82c">9.2 YOLOv3 目标检测（COCO 80 类）</h3>
+<p><strong>方法</strong>：OpenCV DNN 加载 Darknet 预训练 YOLOv3（cfg + 248MB weights），输入 416×416，NMS 去重。测试图取自 ImageNet 验证集（狗/猫/斑马/大象/卡车等）。</p>
+<p><strong>检测结果</strong>（置信度阈值 0.4）：</p>
+<table>
+<thead>
+<tr>
+<th>测试图</th>
+<th>检测结果（类别 + 置信度）</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>柯基犬图</td>
+<td>dog(1.00) ✅</td>
+</tr>
+<tr>
+<td>波斯猫图</td>
+<td>cat(0.90) ✅</td>
+</tr>
+<tr>
+<td>牧羊犬图</td>
+<td>dog(0.99) ✅</td>
+</tr>
+<tr>
+<td>斑点犬图</td>
+<td>dog(0.99), person(0.98) ✅</td>
+</tr>
+<tr>
+<td>斑马图</td>
+<td>zebra(0.99) ✅</td>
+</tr>
+<tr>
+<td>卡车图</td>
+<td>truck(0.99), truck(0.80) ✅</td>
+</tr>
+<tr>
+<td>大象图</td>
+<td>elephant(0.67) + 6×bird</td>
+</tr>
+<tr>
+<td>红熊猫图</td>
+<td>bear(0.65)（视觉相似误检）</td>
+</tr>
+</tbody>
+</table>
+<p><img alt="YOLOv3 检测效果" src="../results/exp8_yolov3_results.png" /></p>
+<p><strong>分析与结论</strong>：
+1. <strong>准确率</strong>：对主流目标（狗、猫、斑马、卡车、大象）都能以高置信度正确识别，多目标图（大象与鸟群、犬与人）也能同时检出；
+2. <strong>速度</strong>：CPU 下单张 416×416 推理仅 1-1.5 秒，远超 two-stage 方法，体现了 YOLO"一次前向回归"的实时性优势；
+3. <strong>误检分析</strong>：红熊猫（红棕毛色、体型相似）被识别为 bear(0.65)，大象图中检出 bird——单阶段模型对相似外观/小目标仍存在混淆，置信度也相对低，这正是 one-stage 在细粒度与小目标上的固有短板；
+4. 整体验证了 YOLOv3 多尺度预测（FPN 式 3 个尺度）与锚框机制的工程有效性。</p>
+<h2 id="144d8262">10. 实验总结与学习心得</h2>
+<h3 id="e27122a4">10.1 实验成果一览</h3>
+<table>
+<thead>
+<tr>
+<th>实验</th>
+<th>核心发现</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>实验一 LeNet-5 vs 全连接</td>
+<td>CNN 以更少参数（CIFAR 上少 27.5 倍）全面胜过 MLP，收敛后 CIFAR 仍高 17.3pp</td>
+</tr>
+<tr>
+<td>实验二 超参数对比</td>
+<td>大核/大通道/max 池化/ReLU 更优；<strong>sigmoid 因梯度消失几乎不收敛（11.35%）</strong></td>
+</tr>
+<tr>
+<td>实验三 知识蒸馏</td>
+<td>10% 数据场景下，蒸馏使 MNIST 学生提升 +1.00pp；收益取决于教师"暗知识"量</td>
+</tr>
+<tr>
+<td>实验四 自编码器</td>
+<td>CNN-AE 重建 MSE 比 MLP-AE 低 30%-46%，卷积结构更契合图像重建</td>
+</tr>
+<tr>
+<td>实验五 GAN/CGAN</td>
+<td>GAN 可生成逼真数字；CGAN 实现按标签定向生成</td>
+</tr>
+<tr>
+<td>实验六 预训练模型</td>
+<td>实测 ImageNet top-1：AlexNet 56.7% &lt; VGG-16 72.2% &lt; ResNet-50 77.3%，后者参数最少、算力最省、精度最高</td>
+</tr>
+<tr>
+<td>选做① Pix2Pix</td>
+<td>边缘图成功翻译为建筑立面，L1 保结构 + PatchGAN 提纹理</td>
+</tr>
+<tr>
+<td>选做② YOLOv3</td>
+<td>单张 CPU 推理约 1s，狗/猫/斑马/卡车等准确检测，红熊猫误检为 bear 体现 one-stage 短板</td>
+</tr>
+</tbody>
+</table>
+<h3 id="63429d3f">10.2 学习心得</h3>
+<ol>
+<li>
+<p><strong>从"能跑"到"懂原理"</strong>：亲手推导卷积层梯度（<code>∂L/∂W=δ*a</code>、<code>∂L/∂b=Σδ</code>、<code>∂L/∂a=δ*rot180(W)</code>）并观察 sigmoid 的梯度消失现象，比单纯看公式理解深刻得多——实验二里 sigmoid 的 11.35% 准确率就是梯度消失最直观的教科书证据；</p>
+</li>
+<li>
+<p><strong>调试是学习的核心环节</strong>：实验三蒸馏最初"不升反降"，排查后发现两个关键点——① 软标签与训练样本顺序未对齐（shuffle 导致错位）；② 温度与权重超参不匹配任务特性。逐一修复后蒸馏终于产生正向提升。这个过程让我体会到：<strong>实验结果不符合预期时，先检查数据对齐和实现细节，再怀疑模型本身</strong>；</p>
+</li>
+<li>
+<p><strong>CNN 系列模型的脉络</strong>：从 LeNet-5（局部连接+权值共享）到 AlexNet（ReLU/Dropout 工程化）、VGG（小核堆叠证明深度）、ResNet（残差解决退化），再到检测领域 R-CNN→Fast→Faster→FPN 与 YOLO/SSD 两条路线的演进，我理解了<strong>架构设计总是在"精度-速度-参数量"三者的权衡中推进</strong>；</p>
+</li>
+<li>
+<p><strong>生成式模型的谱系</strong>：AE（表征）→ VAE（分布先验）→ GAN（对抗博弈）→ CGAN（条件控制）→ Pix2Pix（配对翻译）→ CycleGAN（无配对翻译），每步解决前一步的一个缺陷，这种"以问题为导向"的演进思路值得学习；</p>
+</li>
+<li>
+<p><strong>工程现实</strong>：在 CPU 环境下，训练策略（epoch、batch、线程数）需要为硬件量体裁衣；数据集下载、镜像选择等环境工程同样是实验成败的一部分。</p>
+</li>
+</ol>
+<p>\newpage</p>
+</article>
+</div>
+</body>
+</html>

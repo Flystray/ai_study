@@ -1,0 +1,7 @@
+﻿模型,层数,训练集Acc,测试集Acc
+GCN+Mean,1,0.3812,0.3667
+GCN+DiffPool,1,0.3229,0.3833
+GCN+Mean,2,0.4062,0.4
+GCN+DiffPool,2,0.3812,0.3917
+GCN+Mean,3,0.425,0.3917
+GCN+DiffPool,3,0.3812,0.3833

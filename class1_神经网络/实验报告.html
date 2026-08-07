@@ -1,0 +1,575 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>手写数字识别 - 实验报告</title>
+<script>
+MathJax = {
+    tex: {
+        inlineMath: [['$', '$']],
+        displayMath: [['$$', '$$']],
+        processEscapes: true
+    },
+    svg: { fontCache: "global" }
+};
+</script>
+<script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg.js" async></script>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'Microsoft YaHei',SimSun,sans-serif;color:#1a1a2e;background:#f0f2f5;line-height:1.8;font-size:15px}
+.container{max-width:900px;margin:40px auto;background:#fff;box-shadow:0 2px 20px rgba(0,0,0,0.1);padding:60px 70px;border-radius:4px}
+h1{font-size:28px;text-align:center;margin-bottom:8px;padding-bottom:20px;border-bottom:3px solid #4a90d9}
+h1+p{text-align:center;color:#666;font-size:16px;margin-bottom:40px}
+h2{font-size:20px;color:#2c3e7a;margin:35px 0 15px;padding-left:12px;border-left:4px solid #4a90d9}
+h3{font-size:17px;color:#34495e;margin:25px 0 12px}
+p{margin:10px 0;text-align:justify}
+table{width:100%;border-collapse:collapse;margin:15px 0;font-size:14px}
+th,td{border:1px solid #d0d7de;padding:10px 14px;text-align:center}
+th{background:#f6f8fa;font-weight:600;color:#24292f}
+tr:nth-child(even){background:#f8fafd}
+img{max-width:100%;height:auto;display:block;margin:20px auto;border-radius:6px;box-shadow:0 2px 12px rgba(0,0,0,0.12)}
+code{font-family:Consolas,monospace;background:#f0f2f5;padding:2px 6px;border-radius:3px;font-size:13px;color:#d63384}
+pre{background:#f6f8fa;border:1px solid #e1e4e8;border-radius:6px;padding:16px 20px;overflow-x:auto;margin:15px 0}
+pre code{background:none;padding:0;color:#24292f;font-size:13px;line-height:1.6}
+blockquote{border-left:4px solid #4a90d9;background:#f0f6ff;padding:12px 20px;margin:15px 0;color:#2c3e7a;border-radius:0 4px 4px 0}
+ul,ol{margin:10px 0;padding-left:28px}
+li{margin:5px 0}
+hr{border:none;border-top:1px solid #e1e4e8;margin:30px 0}
+.footer{text-align:center;color:#888;font-size:13px;margin-top:40px;padding-top:20px;border-top:1px solid #e1e4e8}
+</style>
+</head>
+<body>
+<div class="container">
+<h1>手写数字识别实验报告</h1>
+<h2>——基于两层神经网络的手动实现与 PyTorch 实现对比</h2>
+<hr />
+<h2>一、实验目的</h2>
+<ol>
+<li>理解神经网络的基本原理，掌握前馈神经网络的<strong>前向传播</strong>与<strong>反向传播</strong>算法</li>
+<li>从零实现一个两层的全连接神经网络（不依赖深度学习框架），并使用 PyTorch 实现相同结构加以对比</li>
+<li>使用该网络在 <strong>MNIST 手写数字数据集</strong> 上完成多分类任务</li>
+<li>通过可视化手段分析模型的训练过程与最终性能</li>
+</ol>
+<hr />
+<h2>二、学习内容总结</h2>
+<h3>2.1 机器学习基本概念</h3>
+<p>根据《神经网络与深度学习》（邱锡鹏 第2版）<strong>第2章"机器学习概述"</strong>，机器学习是让计算机从数据中自动学习规律，并利用学到的规律对未知数据进行预测的方法。</p>
+<h4>2.1.1 基本要素</h4>
+<p>一个完整的机器学习方法包含以下要素：</p>
+<ul>
+<li><strong>数据（Data）</strong>：由样本构成，分为训练集、验证集、测试集。训练集用于学习模型参数，验证集用于模型选择与超参数调整，测试集用于最终评估泛化性能。</li>
+<li><strong>模型（Model）</strong>：假设空间中的一个参数化函数族 $f(\boldsymbol{x}; \theta)$。模型可分为线性模型和非线性模型。</li>
+<li><strong>学习准则（Learning Criterion）</strong>：通过损失函数 $\mathcal{L}(y, f(\boldsymbol{x}; \theta))$ 量化预测与真实标签的差异，目标是使期望风险 $\mathcal{R}(\theta) = \mathbb{E}_{(\boldsymbol{x},y) \sim p_r(\boldsymbol{x},y)}[\mathcal{L}(y, f(\boldsymbol{x}; \theta))]$ 最小化。</li>
+<li><strong>优化算法（Optimization Algorithm）</strong>：通过梯度下降等方法最小化经验风险。</li>
+<li><strong>评价指标（Evaluation Metric）</strong>：如准确率、精确率、召回率等。</li>
+</ul>
+<h4>2.1.2 损失函数</h4>
+<p>常用的损失函数包括：</p>
+<ul>
+<li><strong>0-1 损失</strong>：直接衡量分类是否正确，但不可导，难以优化</li>
+<li><strong>平方损失</strong>：适用于回归任务，$\mathcal{L}(y, \hat{y}) = \frac{1}{2}(y - \hat{y})^2$</li>
+<li><strong>交叉熵损失</strong>：适用于分类任务，$\mathcal{L}(\boldsymbol{y}, \hat{\boldsymbol{y}}) = -\sum_{c=1}^{C} y_c \log \hat{y}_c$</li>
+</ul>
+<p>交叉熵损失衡量真实分布 $\boldsymbol{y}$（one-hot 向量）与模型预测分布 $\hat{\boldsymbol{y}}$ 之间的差异，当与 Softmax 函数配合使用时，梯度形式非常简洁。</p>
+<h4>2.1.3 梯度下降法</h4>
+<p>梯度下降（Gradient Descent）是机器学习中最常用的优化算法。对于参数 $\theta$，其更新规则为：</p>
+<p>$$\theta^{(t+1)} = \theta^{(t)} - \alpha \cdot \nabla_\theta \mathcal{L}$$</p>
+<p>其中 $\alpha$ 为学习率，$\nabla_\theta \mathcal{L}$ 为损失函数对参数的梯度。梯度方向是函数值上升最快的方向，因此沿负梯度方向更新参数可使损失函数下降。</p>
+<h3>2.2 线性模型与神经网络的关系</h3>
+<p><strong>第3章"线性模型"</strong> 介绍了线性分类模型的基本形式：</p>
+<p>$$f(\boldsymbol{x}; \boldsymbol{w}) = \boldsymbol{w}^T\boldsymbol{x} + b$$</p>
+<p>对于多分类问题，"argmax" 方式使用 $C$ 个判别函数：</p>
+<p>$$f_c(\boldsymbol{x}; \boldsymbol{w}_c) = \boldsymbol{w}_c^T\boldsymbol{x} + b_c, \quad c \in \{1, 2, \cdots, C\}$$</p>
+<p>预测时取得分最大的类别：$y = \arg\max_c f_c(\boldsymbol{x}; \boldsymbol{w}_c)$</p>
+<p><strong>Softmax 回归</strong> 将线性得分映射为概率分布：</p>
+<p>$$p(y=c|\boldsymbol{x}) = \frac{\exp(\boldsymbol{w}_c^T\boldsymbol{x} + b_c)}{\sum_{c'}\exp(\boldsymbol{w}_{c'}^T\boldsymbol{x} + b_{c'})}$$</p>
+<p>神经网络可以看作是在线性模型的基础上，引入了<strong>非线性隐藏层</strong>和<strong>可学习的特征表示</strong>。一个<strong>人工神经元</strong>的本质正是：先计算线性加权和 $\boldsymbol{w}^T\boldsymbol{x} + b$，再经过非线性激活函数 $h(\cdot)$。多层神经网络则将这一过程进行堆叠组合，使得模型能够学习到更加复杂的决策边界。</p>
+<h3>2.3 前馈神经网络</h3>
+<p><strong>第4章"前馈神经网络"</strong> 系统介绍了神经网络的结构与学习算法。</p>
+<h4>2.3.1 网络结构</h4>
+<p>前馈神经网络（Feedforward Neural Network, FNN）由多个神经元分层排列，每层的神经元接收前一层的输出作为输入，经过线性变换和非线性激活函数后输出到下一层。信息单向流动，没有反馈连接。</p>
+<p>对于一个两层的神经网络：</p>
+<ul>
+<li><strong>输入层</strong>：接收原始特征 $\boldsymbol{x} \in \mathbb{R}^{D}$</li>
+<li><strong>隐藏层</strong>：对输入进行线性变换后通过非线性激活函数<br />
+  $$\boldsymbol{z}^{(1)} = \boldsymbol{W}^{(1)}\boldsymbol{x} + \boldsymbol{b}^{(1)}, \quad \boldsymbol{a}^{(1)} = h(\boldsymbol{z}^{(1)})$$</li>
+<li><strong>输出层</strong>：将隐藏层的表示映射到输出空间<br />
+  $$\boldsymbol{z}^{(2)} = \boldsymbol{W}^{(2)}\boldsymbol{a}^{(1)} + \boldsymbol{b}^{(2)}, \quad \boldsymbol{a}^{(2)} = \text{softmax}(\boldsymbol{z}^{(2)})$$</li>
+</ul>
+<h4>2.3.2 激活函数</h4>
+<p>常用的激活函数有：</p>
+<ul>
+<li><strong>Sigmoid 函数</strong>：$\sigma(x) = \frac{1}{1 + e^{-x}}$，输出范围为 $(0, 1)$，存在饱和区梯度消失问题</li>
+<li><strong>Tanh 函数</strong>：$\tanh(x) = \frac{e^x - e^{-x}}{e^x + e^{-x}}$，输出范围为 $(-1, 1)$，零中心化</li>
+<li><strong>ReLU 函数</strong>：$\text{ReLU}(x) = \max(0, x)$，有效缓解梯度消失</li>
+</ul>
+<h4>2.3.3 反向传播算法</h4>
+<p>反向传播（Backpropagation, BP）是训练神经网络的核心算法，其本质是<strong>链式法则</strong>的反复应用。算法分为两步：</p>
+<p><strong>前向传播</strong>：从输入层到输出层逐层计算，得到最终输出和损失值。</p>
+<p><strong>反向传播</strong>：从输出层到输入层反向计算损失对每层参数的梯度：</p>
+<ol>
+<li>
+<p><strong>输出层梯度</strong>：对于 Softmax + 交叉熵的组合，梯度形式非常简洁<br />
+   $$\frac{\partial \mathcal{L}}{\partial \boldsymbol{z}^{(2)}} = \boldsymbol{a}^{(2)} - \boldsymbol{y}$$</p>
+</li>
+<li>
+<p><strong>隐藏层梯度</strong>：通过链式法则将误差从输出层传播回隐藏层<br />
+   $$\frac{\partial \mathcal{L}}{\partial \boldsymbol{z}^{(1)}} = \left( \frac{\partial \boldsymbol{a}^{(1)}}{\partial \boldsymbol{z}^{(1)}} \right)^T \cdot \left( \frac{\partial \boldsymbol{z}^{(2)}}{\partial \boldsymbol{a}^{(1)}} \right)^T \cdot \frac{\partial \mathcal{L}}{\partial \boldsymbol{z}^{(2)}}$$</p>
+</li>
+</ol>
+<p>具体展开如下表（分母布局，Sigmoid 激活）：</p>
+<table>
+<thead>
+<tr>
+<th style="text-align: center;">梯度项</th>
+<th style="text-align: center;">形式</th>
+<th style="text-align: center;">维度</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align: center;">$\partial \mathcal{L} / \partial \boldsymbol{W}^{(2)}$</td>
+<td style="text-align: center;">$\frac{1}{N}(\boldsymbol{a}^{(2)} - \boldsymbol{y})\boldsymbol{a}^{(1)T}$</td>
+<td style="text-align: center;">$C \times H$</td>
+</tr>
+<tr>
+<td style="text-align: center;">$\partial \mathcal{L} / \partial \boldsymbol{b}^{(2)}$</td>
+<td style="text-align: center;">$\frac{1}{N}\sum(\boldsymbol{a}^{(2)} - \boldsymbol{y})$</td>
+<td style="text-align: center;">$C \times 1$</td>
+</tr>
+<tr>
+<td style="text-align: center;">$\partial \mathcal{L} / \partial \boldsymbol{W}^{(1)}$</td>
+<td style="text-align: center;">$\frac{1}{N}(\boldsymbol{\delta}^{(1)})\boldsymbol{x}^T$</td>
+<td style="text-align: center;">$H \times D$</td>
+</tr>
+<tr>
+<td style="text-align: center;">$\partial \mathcal{L} / \partial \boldsymbol{b}^{(1)}$</td>
+<td style="text-align: center;">$\frac{1}{N}\sum\boldsymbol{\delta}^{(1)}$</td>
+<td style="text-align: center;">$H \times 1$</td>
+</tr>
+</tbody>
+</table>
+<p>其中 $\boldsymbol{\delta}^{(1)} = (\boldsymbol{W}^{(2)T}(\boldsymbol{a}^{(2)} - \boldsymbol{y})) \odot \boldsymbol{a}^{(1)} \odot (1 - \boldsymbol{a}^{(1)})$ 为隐藏层的误差信号，$H$ 为隐藏层神经元数量，$D$ 为输入维度，$C$ 为类别数。</p>
+<hr />
+<h2>三、自主学习过程与使用材料</h2>
+<h3>3.1 学习材料</h3>
+<table>
+<thead>
+<tr>
+<th style="text-align: left;">材料</th>
+<th style="text-align: left;">用途</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align: left;">《神经网络与深度学习》(邱锡鹏 第2版) 第2-4章</td>
+<td style="text-align: left;">理论学习，理解神经网络原理与梯度推导</td>
+</tr>
+<tr>
+<td style="text-align: left;">torchvision 官方文档 - <code>datasets.MNIST</code></td>
+<td style="text-align: left;">MNIST 数据集加载</td>
+</tr>
+<tr>
+<td style="text-align: left;">NumPy 官方文档</td>
+<td style="text-align: left;">矩阵运算实现参考</td>
+</tr>
+<tr>
+<td style="text-align: left;">PyTorch 官方文档 - <code>nn.Module</code></td>
+<td style="text-align: left;">自动求导与模型定义</td>
+</tr>
+<tr>
+<td style="text-align: left;">实验讲义 <code>class1_神经网络.pdf</code></td>
+<td style="text-align: left;">实验任务要求</td>
+</tr>
+</tbody>
+</table>
+<h3>3.2 学习过程</h3>
+<ol>
+<li>
+<p><strong>理论学习阶段</strong>：阅读教材第2章，理解机器学习的基本要素（数据、模型、学习准则、优化算法）；阅读第3章，理解线性模型与 Softmax 回归；阅读第4章，重点理解前馈神经网络的结构与前向/反向传播算法。</p>
+</li>
+<li>
+<p><strong>公式推导阶段</strong>：手动推导两层神经网络的梯度传播过程，验证 Softmax + 交叉熵的反向传播公式（Sigmoid 激活版本）。</p>
+</li>
+<li>
+<p><strong>代码实现阶段</strong>：</p>
+<ul>
+<li>使用 NumPy 实现网络的前向传播和反向传播</li>
+<li>实现 Sigmoid 激活函数及其导数</li>
+<li>实现数值稳定的 Softmax 函数</li>
+<li>使用 Xavier 初始化方法初始化参数</li>
+<li>实现 Mini-batch 梯度下降优化（batch_size=64）</li>
+<li>使用 PyTorch 实现相同结构的网络，进行对比验证</li>
+<li>添加 logging 模块记录训练日志到文件</li>
+</ul>
+</li>
+<li>
+<p><strong>实验验证阶段</strong>：加载 MNIST 数据集（70,000 张 28×28 手写数字图片），划分训练/验证/测试集，训练手写版和 PyTorch 版两个模型并对比性能。</p>
+</li>
+</ol>
+<h3>3.3 自主扩展内容</h3>
+<ul>
+<li>采用 <strong>Xavier 初始化</strong> 而非随机初始化，使各层激活值和梯度的方差在传播过程中保持稳定</li>
+<li>增加了 <strong>验证集机制</strong>，在训练过程中监控模型在未见数据上的表现</li>
+<li>实现了 <strong>Mini-batch 梯度下降</strong>（而非全批量），加速训练并引入随机性帮助收敛</li>
+<li>使用 <strong>PyTorch 自动求导</strong> 实现相同结构网络，验证手写梯度的正确性</li>
+<li>将训练日志和结果图表统一保存到 <code>output/</code> 目录下，便于管理</li>
+<li>完整对比了<strong>手写梯度下降</strong>与<strong>自动求导</strong>两种实现方式的训练效果</li>
+</ul>
+<hr />
+<h2>四、实验内容</h2>
+<h3>4.1 数据集介绍</h3>
+<p>使用 torchvision 提供的 <strong>MNIST 手写数字数据集</strong>：</p>
+<ul>
+<li>图像大小：28×28 像素（灰度图，每个像素值 0-255）</li>
+<li>输入维度：784（28×28 展平）</li>
+<li>训练集：60,000 张</li>
+<li>测试集：10,000 张</li>
+<li>类别数：10（数字 0-9）</li>
+</ul>
+<p>数据预处理：</p>
+<table>
+<thead>
+<tr>
+<th style="text-align: left;">步骤</th>
+<th style="text-align: left;">操作</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align: left;">展平</td>
+<td style="text-align: left;">28×28 → 784 维向量</td>
+</tr>
+<tr>
+<td style="text-align: left;">归一化</td>
+<td style="text-align: left;">Min-Max 归一化至 [0, 1] 区间</td>
+</tr>
+<tr>
+<td style="text-align: left;">划分</td>
+<td style="text-align: left;">训练集 50,000 / 验证集 10,000（从训练集分出）</td>
+</tr>
+</tbody>
+</table>
+<h3>4.2 网络结构</h3>
+<pre><code>输入层 (784)  →    隐藏层 (128)    →    输出层 (10)
+    X        W1(128×784)+b1    A1(Sigmoid)   W2(10×128)+b2    A2(Softmax)
+</code></pre>
+<table>
+<thead>
+<tr>
+<th style="text-align: left;">组件</th>
+<th style="text-align: left;">参数</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align: left;">输入层维度</td>
+<td style="text-align: left;">784（28×28 展平）</td>
+</tr>
+<tr>
+<td style="text-align: left;">隐藏层神经元数</td>
+<td style="text-align: left;">128</td>
+</tr>
+<tr>
+<td style="text-align: left;">隐藏层激活函数</td>
+<td style="text-align: left;">Sigmoid</td>
+</tr>
+<tr>
+<td style="text-align: left;">输出层激活函数</td>
+<td style="text-align: left;">Softmax</td>
+</tr>
+<tr>
+<td style="text-align: left;">损失函数</td>
+<td style="text-align: left;">交叉熵损失</td>
+</tr>
+<tr>
+<td style="text-align: left;">参数初始化</td>
+<td style="text-align: left;">Xavier 初始化</td>
+</tr>
+<tr>
+<td style="text-align: left;">优化算法</td>
+<td style="text-align: left;">Mini-batch 梯度下降</td>
+</tr>
+<tr>
+<td style="text-align: left;">批大小</td>
+<td style="text-align: left;">64</td>
+</tr>
+<tr>
+<td style="text-align: left;">学习率</td>
+<td style="text-align: left;">0.5</td>
+</tr>
+<tr>
+<td style="text-align: left;">迭代轮数</td>
+<td style="text-align: left;">100</td>
+</tr>
+</tbody>
+</table>
+<h3>4.3 算法实现流程</h3>
+<p>手写版实现（单个 batch 的处理流程）：</p>
+<pre><code>初始化参数 W1, b1, W2, b2 
+对于每轮 epoch = 1, 2, ..., E:
+    1. 打乱训练数据
+    2. 将数据划分为大小为 batch_size 的 mini-batch
+    对于每个 mini-batch:
+        a. 前向传播:
+           Z1 = W1 @ X_batch + b1      →  A1 = sigmoid(Z1)
+           Z2 = W2 @ A1 + b2           →  A2 = softmax(Z2)
+
+        b. 计算损失:
+           L = -(1/m) * ΣΣ(Y ⊙ log(A2))
+
+        c. 反向传播:
+           dZ2 = A2 - Y
+           dW2 = (1/m) * dZ2 @ A1.T
+           db2 = (1/m) * ΣdZ2
+           dA1 = W2.T @ dZ2
+           dZ1 = dA1 ⊙ A1 ⊙ (1 - A1)
+           dW1 = (1/m) * dZ1 @ X.T
+           db1 = (1/m) * ΣdZ1
+
+        d. 梯度下降更新:
+           W2 ← W2 - lr * dW2
+           b2 ← b2 - lr * db2
+           W1 ← W1 - lr * dW1
+           b1 ← b1 - lr * db1
+    3. 记录本轮平均损失
+    4. 在验证集上评估准确率
+</code></pre>
+<h3>4.4 训练过程</h3>
+<p>两版模型均采用相同超参数：</p>
+<ul>
+<li>网络结构：784 → 128（Sigmoid）→ 10（Softmax）</li>
+<li>优化器：SGD（学习率 0.5）</li>
+<li>批大小：64（每轮约 781 个 batch）</li>
+<li>训练轮数：100</li>
+</ul>
+<p>训练日志节选（手写版）：</p>
+<pre><code>Mini-batch 模式: batch_size=64, 每轮 781 个 batch
+Iter 100/100 | Loss: 0.0025 | Val Acc: 0.9772
+</code></pre>
+<p>训练日志节选（PyTorch 版）：</p>
+<pre><code>batch_size=64, 781 batch/epoch
+Epoch  20/100 | Loss: 0.0305 | Val Acc: 0.9751
+Epoch  40/100 | Loss: 0.0092 | Val Acc: 0.9782
+Epoch  60/100 | Loss: 0.0043 | Val Acc: 0.9791
+Epoch  80/100 | Loss: 0.0026 | Val Acc: 0.9782
+Epoch 100/100 | Loss: 0.0019 | Val Acc: 0.9786
+</code></pre>
+<p>两版模型损失均呈平滑下降，收敛速度与最终精度非常接近。</p>
+<hr />
+<h2>五、实验结果与分析</h2>
+<h3>5.1 训练曲线</h3>
+<p><img alt="手写版训练曲线" src="output/hand/training_curve.png" /></p>
+<p><em>图：手写版模型的损失曲线与验证集准确率曲线</em></p>
+<p><img alt="PyTorch 版训练曲线" src="output/torch/training_curve.png" /></p>
+<p><em>图：PyTorch 版模型的损失曲线与验证集准确率曲线</em></p>
+<p>左右对比可以看到：</p>
+<ul>
+<li><strong>损失曲线</strong>：两版模型损失下降趋势一致，呈平滑下降，没有明显震荡</li>
+<li><strong>验证准确率曲线</strong>：两版模型均随训练进行稳步提升，最终稳定在同一水平</li>
+<li>两版曲线高度相似，验证了手写梯度反传播算法的正确性</li>
+</ul>
+<h3>5.2 模型性能对比</h3>
+<table>
+<thead>
+<tr>
+<th style="text-align: left;">指标</th>
+<th style="text-align: center;">手写版</th>
+<th style="text-align: center;">PyTorch 版</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align: left;">训练集准确率</td>
+<td style="text-align: center;"><strong>100.00%</strong></td>
+<td style="text-align: center;"><strong>100.00%</strong></td>
+</tr>
+<tr>
+<td style="text-align: left;">验证集准确率（最终）</td>
+<td style="text-align: center;"><strong>97.72%</strong></td>
+<td style="text-align: center;"><strong>97.86%</strong></td>
+</tr>
+<tr>
+<td style="text-align: left;">测试集准确率（训练脚本）</td>
+<td style="text-align: center;"><strong>97.95%</strong></td>
+<td style="text-align: center;"><strong>98.03%</strong></td>
+</tr>
+<tr>
+<td style="text-align: left;">测试集准确率（测试脚本）</td>
+<td style="text-align: center;"><strong>97.94%</strong></td>
+<td style="text-align: center;"><strong>98.02%</strong></td>
+</tr>
+<tr>
+<td style="text-align: left;">最终损失</td>
+<td style="text-align: center;">0.0025</td>
+<td style="text-align: center;">0.0019</td>
+</tr>
+</tbody>
+</table>
+<p><img alt="测试结果对比" src="output/test_result.png" /></p>
+<p><em>图：两版模型在测试集上的准确率对比</em></p>
+<h3>5.3 结果分析</h3>
+
+<h4>5.3.1 损失曲线分析</h4>
+<p>从训练曲线可以看到，两版模型的损失曲线呈现典型的<strong>快速下降 → 缓慢收敛</strong>模式：</p>
+<ul>
+<li><strong>Epoch 0-20（快速下降期）</strong>：损失从初始值迅速降至约 0.03（PyTorch 版第 20 轮 0.0305）。此时网络参数从随机初始化快速调整，学习到最显著的判别特征（如数字的轮廓信息）。验证准确率也从约 90% 快速提升至约 97.5%。</li>
+<li><strong>Epoch 20-60（精细调整期）</strong>：损失从 0.0305 降至 0.0043，下降速度明显放缓。此时网络开始学习更细微的判别特征（如数字 3 与 5、8 与 9 的区分），验证准确率缓慢提升约 0.4%。</li>
+<li><strong>Epoch 60-100（接近饱和期）</strong>：损失从 0.0043 降至 0.0019，下降极为平缓。模型已接近收敛，验证集准确率稳定在 97.8%-97.9% 之间，不再显著提升。</li>
+</ul>
+<p>整个训练过程中损失曲线平滑下降，没有明显震荡，说明学习率 0.5 的选择是合适的。如果学习率过大，损失曲线会出现剧烈波动甚至发散；如果过小，则收敛速度会明显变慢。</p>
+
+<h4>5.3.2 验证准确率分析</h4>
+<p>验证集准确率的变化趋势与损失曲线高度吻合：</p>
+<ul>
+<li>验证准确率从初始约 90% 迅速攀升至 97% 以上（前 20 轮），随后进入缓慢增长期</li>
+<li>最终准确率稳定在 <strong>97.7%（手写版）</strong> 和 <strong>97.9%（PyTorch 版）</strong> 左右</li>
+<li>验证准确率曲线没有出现过拟合的典型特征（验证准确率先升后降），说明模型容量对于 MNIST 数据集是合适的</li>
+</ul>
+
+<h4>5.3.3 训练集准确率 100% 的含义</h4>
+<p>两版模型在训练集上均达到 <strong>100.00%</strong> 准确率，这意味着：</p>
+<ol>
+<li><strong>模型容量足够</strong>：128 个隐藏神经元、约 101,760 个参数（784×128 + 128 + 128×10 + 10），足以记住 50,000 个训练样本的所有判别特征</li>
+<li><strong>数据线性可分（在特征空间）</strong>：经过 Sigmoid 非线性变换后，网络学到的 128 维隐藏层表示使得不同数字在这个特征空间中线性可分</li>
+<li><strong>过拟合风险可控</strong>：验证集 97.72%-97.86% 的准确率表明，过拟合程度并不严重，模型具有良好的泛化能力</li>
+</ol>
+
+<h4>5.3.4 泛化性能分析</h4>
+<table>
+<thead>
+<tr>
+<th style="text-align: left;">差距类型</th>
+<th style="text-align: center;">手写版</th>
+<th style="text-align: center;">PyTorch 版</th>
+<th style="text-align: left;">说明</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align: left;">训练集 - 验证集</td>
+<td style="text-align: center;">2.28%</td>
+<td style="text-align: center;">2.14%</td>
+<td style="text-align: left;">模型在未见数据上略有下降，属于正常范围</td>
+</tr>
+<tr>
+<td style="text-align: left;">验证集 - 测试集</td>
+<td style="text-align: center;">+0.23%</td>
+<td style="text-align: center;">+0.17%</td>
+<td style="text-align: left;">测试集准确率略高于验证集，说明没有过拟合</td>
+</tr>
+<tr>
+<td style="text-align: left;">训练集 - 测试集</td>
+<td style="text-align: center;">2.05%</td>
+<td style="text-align: center;">1.97%</td>
+<td style="text-align: left;">整体泛化差距约 2%，对于简单两层网络而言表现良好</td>
+</tr>
+</tbody>
+</table>
+<p>测试集准确率（97.94%-98.03%）略高于验证集准确率（97.72%-97.86%），这可能是由于验证集是从训练集中划分出来的，其数据分布与训练集更接近，但验证集规模较小（10,000 张），存在一定的随机波动。</p>
+
+<h4>5.3.5 手写版与 PyTorch 版对比分析</h4>
+<p>两版模型在完全相同的网络结构和超参数下训练，最终结果高度一致：</p>
+<table>
+<thead>
+<tr>
+<th style="text-align: left;">对比维度</th>
+<th style="text-align: center;">手写版</th>
+<th style="text-align: center;">PyTorch 版</th>
+<th style="text-align: center;">差异</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align: left;">测试集准确率</td>
+<td style="text-align: center;">97.95%</td>
+<td style="text-align: center;">98.03%</td>
+<td style="text-align: center;"><strong>0.08%</strong></td>
+</tr>
+<tr>
+<td style="text-align: left;">最终损失</td>
+<td style="text-align: center;">0.0025</td>
+<td style="text-align: center;">0.0019</td>
+<td style="text-align: center;">0.0006</td>
+</tr>
+<tr>
+<td style="text-align: left;">训练时间</td>
+<td style="text-align: center;">~6.5 min</td>
+<td style="text-align: center;">~6 min</td>
+<td style="text-align: center;">接近</td>
+</tr>
+</tbody>
+</table>
+<p>这 <strong>0.08% 的微小差异</strong> 并非手写梯度有误，而是由以下原因导致：</p>
+<ol>
+<li><strong>随机打乱顺序不同</strong>：两版的随机种子不同，导致每轮看到 mini-batch 的顺序不同，最终的收敛点也会略有差异</li>
+<li><strong>浮点运算精度</strong>：手写版使用 NumPy（float64），PyTorch 版默认使用 float32，精度差异在多次迭代后会积累微小误差</li>
+<li><strong>数值稳定性实现细节</strong>：Softmax 和交叉熵的数值稳定技巧略有不同</li>
+</ol>
+<p><strong>结论</strong>：0.08% 的差异在随机训练的正常波动范围内，完全可以忽略。这一结果充分验证了手写反向传播算法的正确性。</p>
+
+<h4>5.3.6 超参数选择分析</h4>
+<table>
+<thead>
+<tr>
+<th style="text-align: left;">超参数</th>
+<th style="text-align: left;">选择理由</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align: left;">学习率 0.5</td>
+<td style="text-align: left;">输入已归一化到 [0,1]，Xavier 初始化让权重初始值约 0.04，梯度量级很小，0.5 恰好能快速收敛且不震荡</td>
+</tr>
+<tr>
+<td style="text-align: left;">batch_size=64</td>
+<td style="text-align: left;">经典小批量大小，在收敛速度和泛化能力之间取得良好平衡</td>
+</tr>
+<tr>
+<td style="text-align: left;">隐藏层 128 神经元</td>
+<td style="text-align: left;">MNIST 有 10 个数字类别，128 神经元为每类分配约 12-13 个特征检测器</td>
+</tr>
+<tr>
+<td style="text-align: left;">Sigmoid 激活</td>
+<td style="text-align: left;">两层网络不会产生严重梯度消失，且 Sigmoid 输出在 (0,1)，与 Softmax 的概率输出相协调</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2>六、结论</h2>
+<ol>
+<li>
+<p><strong>成功实现</strong>：从零实现了一个完整的两层神经网络（784 → 128 → 10），使用 Sigmoid 激活函数和 Mini-batch 梯度下降，在不依赖深度学习框架的情况下完成了 MNIST 手写数字识别任务。</p>
+</li>
+<li>
+<p><strong>双重验证</strong>：同时使用 PyTorch 自动求导实现了完全相同的网络结构，两版结果高度一致，验证了手写反向传播算法的正确性。</p>
+</li>
+<li>
+<p><strong>良好性能</strong>：两版模型在 MNIST 测试集上分别达到 <strong>97.95%（手写版）</strong> 和 <strong>98.03%（PyTorch 版）</strong> 的准确率，验证了该网络结构的有效性，且两者仅相差 0.08%，充分说明了手写梯度的正确性。</p>
+</li>
+<li>
+<p><strong>扩展思考</strong>：未来可以进一步尝试：</p>
+<ul>
+<li>增加隐藏层深度或宽度，探索更复杂的网络结构</li>
+<li>尝试 ReLU 激活函数，观察收敛速度的变化</li>
+<li>引入正则化（Dropout、L2 正则化）防止过拟合</li>
+<li>使用学习率衰减策略，提升最终精度</li>
+<li>在 CIFAR-10 等更复杂的数据集上验证模型</li>
+</ul>
+</li>
+</ol>
+<hr />
+<h2>参考文献</h2>
+<ol>
+<li>邱锡鹏. 神经网络与深度学习（第2版）. 复旦大学出版社, 2026.</li>
+<li>LeCun, Y., Cortes, C., Burges, C.J. The MNIST Database of Handwritten Digits, 1998.</li>
+<li>torchvision.datasets.MNIST — PyTorch 官方文档.</li>
+<li>Rumelhart, D.E., Hinton, G.E., Williams, R.J. Learning representations by back-propagating errors. Nature, 1986.</li>
+</ol>
+<hr />
+<p><em>实验日期：2026年7月26日</em></p>
+<div class="footer">-- 实验报告结束 --</div>
+</div>
+</body>
+</html>

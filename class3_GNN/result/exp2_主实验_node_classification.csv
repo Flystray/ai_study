@@ -1,0 +1,4 @@
+﻿Embedding模型,分类器,训练集Acc,测试集Acc
+DeepWalk,MLP-1层,1.0,0.8247
+node2vec,MLP-1层,1.0,0.8247
+LINE,MLP-1层,1.0,0.5498

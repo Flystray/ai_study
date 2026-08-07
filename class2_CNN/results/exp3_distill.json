@@ -1,0 +1,28 @@
+{
+  "mnist": {
+    "teacher_acc": 0.9876,
+    "student_alone_acc": 0.8951,
+    "student_distill_acc": 0.9051,
+    "improvement": 0.010000000000000009,
+    "T": 1.0,
+    "alpha": 0.7,
+    "subset_frac": 0.1,
+    "student_params": 25450,
+    "teacher_params": 44426,
+    "acc_teacher_soft_argmax": 0.9876000285148621,
+    "teacher_avg_max_prob": 0.9905712008476257
+  },
+  "fashion": {
+    "teacher_acc": 0.8868,
+    "student_alone_acc": 0.8198,
+    "student_distill_acc": 0.8209,
+    "improvement": 0.0010999999999999899,
+    "T": 1.0,
+    "alpha": 0.7,
+    "subset_frac": 0.1,
+    "student_params": 25450,
+    "teacher_params": 44426,
+    "acc_teacher_soft_argmax": 0.8867999911308289,
+    "teacher_avg_max_prob": 0.8871191143989563
+  }
+}

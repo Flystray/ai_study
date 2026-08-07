@@ -1,0 +1,23 @@
+{
+  "mnist": {
+    "lenet5_acc": 0.9879,
+    "mlp_acc": 0.9723,
+    "lenet5_params": 44426,
+    "mlp_params": 178110,
+    "cost_s": 952.9857695102692
+  },
+  "fashion": {
+    "lenet5_acc": 0.8925,
+    "mlp_acc": 0.8785,
+    "lenet5_params": 44426,
+    "mlp_params": 178110,
+    "cost_s": 1224.0397760868073
+  },
+  "cifar10": {
+    "lenet5_acc": 0.6643,
+    "mlp_acc": 0.4912,
+    "lenet5_params": 62006,
+    "mlp_params": 1707274,
+    "cost_s": 2104.7418146133423
+  }
+}

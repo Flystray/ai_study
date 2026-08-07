@@ -1,0 +1,15 @@
+# GNN 课程实验依赖 (conda 环境: gnn)
+# 说明: DGL 2.2.1 的 Windows 轮子只支持 Python 3.12, 且 C++ 库匹配 torch 2.3.0
+#       安装命令见 README.md
+torch==2.3.0+cpu
+dgl==2.2.1
+numpy==1.26.4
+scipy
+scikit-learn
+matplotlib
+networkx
+pandas
+tqdm
+torchdata==0.7.1
+pyyaml
+pydantic

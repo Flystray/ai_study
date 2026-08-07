@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>第二部分　论文阅读笔记</title>
+<style>
+:root {
+  --main: #2c3e50; --accent: #1a5276; --border: #d5dbe0; --bg: #f6f8fa;
+  --code-bg: #f0f2f5; --quote-bar: #b8c4cf;
+}
+* { box-sizing: border-box; }
+body {
+  margin: 0; background: var(--bg); color: var(--main);
+  font-family: -apple-system, "Segoe UI", "Microsoft YaHei", "PingFang SC", sans-serif;
+  line-height: 1.75; font-size: 15.5px;
+}
+.container { max-width: 880px; margin: 32px auto 80px; padding: 40px 56px;
+  background: #fff; border: 1px solid var(--border); border-radius: 8px;
+  box-shadow: 0 1px 4px rgba(0,0,0,.06); }
+h1 { font-size: 26px; color: var(--accent); border-bottom: 3px solid var(--accent);
+  padding-bottom: 12px; margin-top: 8px; }
+h2 { font-size: 21px; color: var(--accent); border-bottom: 1px solid var(--border);
+  padding-bottom: 6px; margin-top: 34px; }
+h3 { font-size: 17.5px; color: #34495e; margin-top: 26px; }
+h4 { font-size: 16px; color: #566573; }
+a { color: var(--accent); }
+p, li { text-align: justify; }
+strong { color: #1b2631; }
+
+/* 目录 */
+.toc { background: var(--bg); border: 1px solid var(--border); border-radius: 6px;
+  padding: 14px 22px; margin-bottom: 30px; font-size: 14px; }
+.toc .toc-title { font-weight: 700; color: var(--accent); margin-bottom: 6px; }
+.toc ul { list-style: none; padding-left: 16px; margin: 4px 0; }
+.toc li { margin: 2px 0; }
+.toc a { text-decoration: none; }
+.toc a:hover { text-decoration: underline; }
+
+/* 表格 */
+table { border-collapse: collapse; width: 100%; margin: 18px 0; font-size: 14.5px; }
+th, td { border: 1px solid var(--border); padding: 8px 12px; text-align: left; }
+th { background: #eef2f6; color: var(--accent); font-weight: 600; }
+tbody tr:nth-child(even) { background: #fafbfc; }
+
+/* 引用块 */
+blockquote { margin: 16px 0; padding: 10px 18px; background: var(--bg);
+  border-left: 4px solid var(--quote-bar); border-radius: 0 4px 4px 0; color: #4a5a66; }
+blockquote p { margin: 6px 0; }
+
+/* 代码 */
+code { background: var(--code-bg); padding: 2px 6px; border-radius: 4px;
+  font-family: Consolas, "Courier New", monospace; font-size: 88%; color: #c0392b; }
+pre { background: #f8f9fa; border: 1px solid var(--border); border-radius: 6px;
+  padding: 12px 16px; overflow-x: auto; }
+pre code { background: none; padding: 0; color: #2c3e50; font-size: 13.5px; }
+
+/* 数学公式 */
+.math-block { text-align: center; margin: 20px 0; overflow-x: auto; }
+mjx-container[jax="CHTML"] { font-size: 105%; }
+</style>
+<script>
+window.MathJax = {
+  tex: { inlineMath: [['\\(', '\\)']], displayMath: [['\\[', '\\]']] },
+  options: { skipHtmlTags: ['script', 'noscript', 'style', 'textarea', 'pre', 'code'] }
+};
+</script>
+<script src="mathjax/tex-chtml.js"></script>
+</head>
+<body>
+<div class="container">
+<div class="toc">
+<ul>
+<li><a href="#402a0242">第二部分 论文阅读笔记</a><ul>
+<li><a href="#0f0a14cd">一、知识蒸馏（Knowledge Distillation）</a><ul>
+<li><a href="#72dba167">1. Do Deep Nets Really Need to be Deep? —— 迁移知识的第一声</a></li>
+<li><a href="#673aa5b9">2. Distilling the Knowledge in a Neural Network —— 知识蒸馏的经典范式</a></li>
+</ul>
+</li>
+<li><a href="#cde2fc96">二、生成式模型（Generative Models）</a><ul>
+<li><a href="#4b6772b4">3. 基于 CNN 的 AutoEncoder（自编码器）</a></li>
+<li><a href="#5a20f02a">4. Generative Adversarial Nets（GAN）—— 对抗生成网络</a></li>
+<li><a href="#5fc2f542">5. Conditional Generative Adversarial Nets（CGAN）—— 可控生成</a></li>
+<li><a href="#59980860">6. Image-to-Image Translation with Conditional Adversarial Networks（Pix2Pix）</a></li>
+<li><a href="#a5e94d78">7. Unpaired Image-to-Image Translation using Cycle-Consistent Adversarial Networks（CycleGAN）</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</div>
+
+<article>
+<h1 id="402a0242">第二部分　论文阅读笔记</h1>
+<blockquote>
+<p>阅读范围涵盖知识蒸馏、生成式模型、目标检测三大主题共 13 篇经典论文 + AutoEncoder 基础概念。
+每篇按【一句话】【动机】【核心方法】【关键公式】【实验结果】【我的理解】六部分记录。</p>
+</blockquote>
+<hr />
+<h2 id="0f0a14cd">一、知识蒸馏（Knowledge Distillation）</h2>
+<h3 id="72dba167">1. Do Deep Nets Really Need to be Deep? —— 迁移知识的第一声</h3>
+<ul>
+<li><strong>作者/机构</strong>：Jimmy Ba, Rich Caruana（多伦多大学），2014 年，arXiv:1312.6184</li>
+<li><strong>一句话</strong>：用<strong>浅层网络</strong>也能逼近深度网络的性能，关键在于把深度网络"输出概率分布"中蕴含的知识迁移给浅网络。</li>
+</ul>
+<p><strong>动机</strong>：深度网络虽然准确率高，但计算量大、部署困难（移动端/实时系统）。能否训练一个同样准确但更浅更快的模型？</p>
+<p><strong>核心方法</strong>：
+1. 深度网络 D 在训练集上预测出 softmax 概率向量 \(\mathbf{P}\)；
+2. 把 \(\mathbf{P}\) 当作"软标签"监督浅网络 S 的训练，损失用 KL 散度：</p>
+<div class="math-block">\[\mathcal{L}_{KD}=D_{KL}(\mathbf{P}_{D}\parallel \mathbf{P}_{S}) \]</div>
+<ol start="3">
+<li>相比只用 0/1 硬标签，软标签包含了类别间的<strong>相似性结构</strong>（例如"马"与"斑马"比"马"与"卡车"更接近），这正是可迁移的"暗知识"。</li>
+</ol>
+<p><strong>实验结果</strong>：在 MNIST 上用深度网络蒸馏出的浅层网络，错误率从 1.28% 提升到接近深网络水平；在语音识别等任务上也得到验证——<strong>无需增加参数就能显著提升浅网络性能</strong>。</p>
+<p><strong>我的理解</strong>：这篇论文是知识蒸馏的开山之作，证明"模型产出的分布比类别标签携带更多信息"。它启发后续 Hinton 用"温度"平滑分布，也启发模型压缩（蒸馏）、跨领域迁移（teacher-student）等大量工作。</p>
+<hr />
+<h3 id="673aa5b9">2. Distilling the Knowledge in a Neural Network —— 知识蒸馏的经典范式</h3>
+<ul>
+<li><strong>作者/机构</strong>：Geoffrey Hinton, Oriol Vinyals, Jeff Dean（Google），2015 年，arXiv:1503.02531</li>
+<li><strong>一句话</strong>：通过<strong>温度软化</strong>教师网络的输出分布，把大模型（或集成模型）的知识"蒸馏"到小模型，并且可以把多个模型的知识压缩进一个模型。</li>
+</ul>
+<p><strong>动机</strong>：生产环境需要轻量模型，而最优秀的模型往往很大或是多个模型的集成。希望把大模型/集成的知识无损地移植到一个小模型上。</p>
+<p><strong>核心方法</strong>：
+1. <strong>软化分布</strong>：用温度参数 \(T\) 软化 softmax：</p>
+<div class="math-block">\[q_i=\frac{\exp(z_i/T)}{\sum_j \exp(z_j/T)} \]</div>
+<p>温度 \(T\) 越高，分布越"平缓"，暴露出类间的相对相似度。
+2. <strong>蒸馏损失</strong>：学生网络同时拟合硬标签和教师软标签，</p>
+<div class="math-block">\[\mathcal{L}=\alpha\,\mathrm{CE}(q_s^T, y)+(1-\alpha)\,T^2\cdot D_{KL}(q_t^T\parallel q_s^T) \]</div>
+<p>其中 \(T^2\) 因子用于补偿温度缩放对梯度量级的影响。
+3. <strong>特殊技巧</strong>：对 MNIST 可忽略所有除正确类之外的负标签；对大数据集可只用一个高温度。</p>
+<p><strong>实验结果</strong>：
+- MNIST：一个在 60k 样本上训练的模型，如果用教师模型的软标签训练 10k 样本，效果几乎与直接训练 60k 一样好（"蒸馏相当于数据增广"）；
+- 语音识别：把 8 个模型的集成蒸馏成一个模型，效果接近集成本身；
+- 引入专家模型（specialists）解决类间高度混淆问题。</p>
+<p><strong>我的理解</strong>：这篇把蒸馏总结为"hard target 提供类别正确性，soft target 提供类间结构"，并给出温度这个可调旋钮，是工程上最常用的一版。温度 \(T\) 与损失权重 \(\alpha\) 是两个关键超参，\(T\) 过大过小都会丢失信息——太大导致分布太平、太小退化为硬标签。后续实验（我的实验 3）将在 MNIST/Fashion 上验证：<strong>用 CNN 蒸馏 MLP，能否提升小全连接网络的精度</strong>。</p>
+<hr />
+<h2 id="cde2fc96">二、生成式模型（Generative Models）</h2>
+<h3 id="4b6772b4">3. 基于 CNN 的 AutoEncoder（自编码器）</h3>
+<ul>
+<li><strong>一句话</strong>：自编码器 = 编码器 + 解码器，先压缩再重建，是无监督表征学习与生成任务的基石。</li>
+</ul>
+<p><strong>核心思想</strong>：AE 用神经网络学习恒等映射 \(\hat x = D(E(x))\approx x\)，迫使网络抓住数据的主要结构而非逐像素记忆：</p>
+<div class="math-block">\[\min_{\theta_E,\theta_D}\;\mathbb{E}_x\big[\lVert x-D(E(x))\rVert^2\big] \]</div>
+<ul>
+<li><strong>编码器 \(E\)</strong>：把高维输入压缩成低维<strong>潜在向量</strong> \(z\)；</li>
+<li><strong>解码器 \(D\)</strong>：由 \(z\) 重建输入。</li>
+</ul>
+<p><strong>CNN-AE 的优势</strong>：用卷积提取局部特征、参数共享、天然保留空间结构，重建质量优于把图像拉平的全连接 AE（全连接会把像素位置破坏并产生大量参数）。</p>
+<p><strong>我的理解</strong>：AE 学到的是"紧凑表示"，重建清晰即表示保留了关键信息。它的瓶颈在于：潜在空间无约束，任意两点之间不连续，因此直接采样 \(z\) 生成图像质量有限（GAN 与 VAE 正是为此而改进）。本实验（实验 4）将对比 <strong>CNN-AE 与全连接 AE</strong> 的重建效果。</p>
+<hr />
+<h3 id="5a20f02a">4. Generative Adversarial Nets（GAN）—— 对抗生成网络</h3>
+<ul>
+<li><strong>作者/机构</strong>：Ian Goodfellow 等（蒙特利尔大学），2014 年，arXiv:1406.2661</li>
+<li><strong>一句话</strong>：让<strong>生成器</strong>与<strong>判别器</strong>玩一个二人零和博弈，生成器在"骗过判别器"的过程中学会逼近真实数据分布。</li>
+</ul>
+<p><strong>动机</strong>：传统生成模型（如最大似然）难以显式计算复杂分布，或依赖强假设；希望有一种无需显式建模密度、能直接生成逼真样本的方法。</p>
+<p><strong>核心方法</strong>：
+1. 生成器 \(G\)：从噪声 \(z\sim p_z\) 映射到数据空间 \(G(z)\)；
+2. 判别器 \(D\)：判断输入是真实样本还是生成样本；
+3. 对抗训练目标（min-max 博弈）：</p>
+<div class="math-block">\[\min_G\max_D\; V(D,G)=\mathbb{E}_{x\sim p_{data}}\big[\log D(x)\big]+\mathbb{E}_{z\sim p_z}\big[\log(1-D(G(z)))\big] \]</div>
+<ol start="4">
+<li>理论证明：当 \(D\) 达到最优时，\(G\) 的优化等价于最小化 \(p_{data}\) 与 \(p_g\) 之间的 <strong>JS 散度</strong>，博弈的纳什均衡点 \(p_g=p_{data}\) 时生成分布完全还原真实分布。</li>
+</ol>
+<p><strong>实验结果</strong>：在 MNIST、TFD、CIFAR-10 上生成的样本视觉质量显著优于当时的 VAE/DBN，无需预训练即可训练。</p>
+<p><strong>GAN 与对抗训练（Adversarial Training, AT）的区别</strong>（任务要求辨析）：
+- <strong>对抗生成网络（GAN）</strong>：用"生成器 vs 判别器"博弈来<strong>学习数据分布、生成新样本</strong>，两者合作实现生成目标；
+- <strong>对抗训练（AT）</strong>：指<strong>增强分类器鲁棒性</strong>的训练范式，向正常样本中加入对抗扰动（如 FGSM）后与干净样本一起训练，使模型对恶意扰动不敏感——它不生成数据，而是"用对抗样本训练以防御对抗样本"。
+- 二者都用到"对抗"思想，但目标完全不同：GAN 面向<strong>生成</strong>，AT 面向<strong>鲁棒分类</strong>。</p>
+<p><strong>我的理解</strong>：GAN 训练不稳定（模式坍缩、训练不收敛）的根源在于 min-max 博弈而非普通最小化；改进方向包括 WGAN（换用 Wasserstein 距离）、谱归一化、条件 GAN 等。它开启了图像生成的新纪元，后续 CGAN/Pix2Pix/CycleGAN 都是在其框架上加入条件或结构约束。</p>
+<hr />
+<h3 id="5fc2f542">5. Conditional Generative Adversarial Nets（CGAN）—— 可控生成</h3>
+<ul>
+<li><strong>作者/机构</strong>：Mehdi Mirza, Simon Osindero，2014 年，arXiv:1411.1784</li>
+<li><strong>一句话</strong>：给 GAN 加上<strong>条件</strong> \(y\)，让生成器按指定类别/属性生成样本，变"随机生成"为"定向生成"。</li>
+</ul>
+<p><strong>动机</strong>：原始 GAN 无法控制生成内容的类别，MNIST 上只能随机生成"某个数字"，无法指定"生成数字 7"。</p>
+<p><strong>核心方法</strong>：把条件信息 \(y\)（如类别标签）同时注入生成器与判别器：</p>
+<div class="math-block">\[\min_G\max_D\;V(D,G)=\mathbb{E}_{x\sim p_{data}}\big[\log D(x|y)\big]+\mathbb{E}_{z\sim p_z}\big[\log(1-D(G(z|y)))\big] \]</div>
+<p>实现上常用 embedding + concat：标签 \(y\) 先嵌入为向量，与噪声 \(z\) 拼接送入 \(G\)；同时将 \(y\) 经空间复制后与图像在通道维拼接送入 \(D\)。</p>
+<p><strong>实验结果</strong>：在 MNIST 上能稳定生成指定数字，生成质量在类别层面可控；分类器验证生成的数字标签与条件一致。</p>
+<p><strong>我的理解</strong>：CGAN 用最朴素的方式（拼接条件向量）实现了可控生成，是条件生成思想的起点。它的局限是条件形式简单（只支持离散标签/固定向量），难以描述复杂条件（如文字描述、属性组合），后续被 cVAE-GAN、StackGAN 等扩展。本实验（实验 5）将实现 <strong>GAN 与 CGAN</strong>，对比随机生成与指定标签生成的效果。</p>
+<hr />
+<h3 id="59980860">6. Image-to-Image Translation with Conditional Adversarial Networks（Pix2Pix）</h3>
+<ul>
+<li><strong>作者/机构</strong>：Phillip Isola 等（UC Berkeley），2017 年，arXiv:1611.07004</li>
+<li><strong>一句话</strong>：一个<strong>通用</strong>的条件 GAN 框架，把所有"图像到图像翻译"任务（草图→照片、日转夜、语义分割→街景等）统一为有监督的配对数据学习。</li>
+</ul>
+<p><strong>动机</strong>：图像翻译任务（从输入图像生成对应输出图像）种类繁多、每类都要专门设计损失函数，希望有一个通用框架解决所有这类问题。</p>
+<p><strong>核心方法</strong>：
+1. <strong>生成器用 U-Net</strong>：编码-解码结构 + 跳跃连接，保留输入图像的低层空间细节（这对图像翻译至关重要）；
+2. <strong>判别器用 PatchGAN</strong>：不再对整图输出一个真/假标量，而是对图像切分成 \(N\times N\) 个 patch 分别判真伪，既降低参数、又能模拟<strong>高频纹理</strong>损失（马尔可夫随机场假设）；
+3. <strong>损失 = GAN 对抗损失 + L1 重建损失</strong>：</p>
+<div class="math-block">\[\mathcal{L}= \mathcal{L}_{cGAN}(G,D)+\lambda\,\mathbb{E}\big[\lVert y-G(x)\rVert_1\big] \]</div>
+<p>L1 项负责"粗"结构保真（比 L2 更锐利），GAN 项负责"细"纹理逼真，两者互补。</p>
+<p><strong>实验结果</strong>：在 facades、maps、cityscapes、edges2shoes 等 9 个任务上统一框架均取得当时最佳效果；L1 与 GAN 的组合显著优于只用其中一种。</p>
+<p><strong>我的理解</strong>：Pix2Pix 是"条件 GAN + 结构化生成"的教科书实现，PatchGAN 的思想被后续大量图像生成工作沿用。它的前提是<strong>配对数据</strong>（输入输出一一对应），而现实中大量任务没有配对数据，这正是 CycleGAN 要解决的问题。</p>
+<hr />
+<h3 id="a5e94d78">7. Unpaired Image-to-Image Translation using Cycle-Consistent Adversarial Networks（CycleGAN）</h3>
+<ul>
+<li><strong>作者/机构</strong>：Jun-Yan Zhu 等（UC Berkeley），2017 年，arXiv:1703.10593</li>
+<li><strong>一句话</strong>：在<strong>没有配对数据</strong>的条件下做风格迁移，用"循环一致性损失"保证双向映射 \(G\circ F\approx \mathrm{Id}\)。</li>
+</ul>
+<p><strong>动机</strong>：Pix2Pix 需要配对数据，但很多翻译任务（马↔斑马、照片↔莫奈画）根本没有成对样本，只有两个独立集合。</p>
+<p><strong>核心方法</strong>：
+1. 两个生成器 \(G:X\rightarrow Y\)、\(F:Y\rightarrow X\) 和两个判别器 \(D_X,D_Y\)；
+2. <strong>对抗损失</strong>：让 \(G(x)\) 在 \(Y\) 域判别器看来与 \(Y\) 域真实样本不可区分；
+3. <strong>循环一致性损失</strong>（关键创新）：</p>
+<div class="math-block">\[\mathcal{L}_{cyc}(G,F)=\mathbb{E}_{x\sim X}\big[\lVert F(G(x))-x\rVert_1\big]+\mathbb{E}_{y\sim Y}\big[\lVert G(F(y))-y\rVert_1\big] \]</div>
+<p>要求"翻译过去再翻译回来"能还原原图，从而在没有配对的约束下锚定映射语义，防止生成器"自由发挥"；
+4. 总损失 = 两个对抗损失 + \(\lambda\cdot\)循环损失。</p>
+<p><strong>实验结果</strong>：在 horse↔zebra、photo↔Van Gogh/Monet、apple↔orange、季节迁移等任务上，无需配对即实现高质量风格迁移；消融实验表明去掉循环损失后映射完全崩溃。</p>
+<p><strong>我的理解</strong>：CycleGAN 用"循环"这个优雅的自我监督替代了配对监督，极大扩展了图像翻译的适用面，成为无监督风格迁移的代表作。局限是几何变形大、内容改变明显的任务仍易失败；其循环一致性思想后来也被用于视频、语音等多模态翻译。</p>
+</article>
+</div>
+</body>
+</html>

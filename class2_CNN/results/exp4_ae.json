@@ -1,0 +1,10 @@
+{
+  "mnist": {
+    "cnn_ae_final_loss": 0.0018040838671227297,
+    "mlp_ae_final_loss": 0.0033456632064034542
+  },
+  "fashion": {
+    "cnn_ae_final_loss": 0.005121940492341916,
+    "mlp_ae_final_loss": 0.007444190936038891
+  }
+}

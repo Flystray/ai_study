@@ -1,0 +1,128 @@
+{
+  "bus_n02066245.jpg": [],
+  "car_n02113186.jpg": [
+    {
+      "class": "dog",
+      "conf": 0.999
+    }
+  ],
+  "cat_n02123394.jpg": [
+    {
+      "class": "cat",
+      "conf": 0.901
+    }
+  ],
+  "cat_n02124075.jpg": [
+    {
+      "class": "person",
+      "conf": 0.867
+    }
+  ],
+  "cat_n02125311.jpg": [],
+  "cat_n02445715.jpg": [
+    {
+      "class": "person",
+      "conf": 0.997
+    },
+    {
+      "class": "person",
+      "conf": 0.986
+    },
+    {
+      "class": "person",
+      "conf": 0.977
+    },
+    {
+      "class": "person",
+      "conf": 0.961
+    },
+    {
+      "class": "person",
+      "conf": 0.947
+    },
+    {
+      "class": "person",
+      "conf": 0.736
+    }
+  ],
+  "cat_n02509815.jpg": [
+    {
+      "class": "bear",
+      "conf": 0.646
+    }
+  ],
+  "dog_n02105641.jpg": [
+    {
+      "class": "dog",
+      "conf": 0.987
+    }
+  ],
+  "dog_n02110341.jpg": [
+    {
+      "class": "dog",
+      "conf": 0.988
+    },
+    {
+      "class": "person",
+      "conf": 0.979
+    }
+  ],
+  "elephant_n02504458.jpg": [
+    {
+      "class": "bird",
+      "conf": 0.961
+    },
+    {
+      "class": "bird",
+      "conf": 0.945
+    },
+    {
+      "class": "bird",
+      "conf": 0.899
+    },
+    {
+      "class": "bird",
+      "conf": 0.889
+    },
+    {
+      "class": "bird",
+      "conf": 0.884
+    },
+    {
+      "class": "bird",
+      "conf": 0.835
+    },
+    {
+      "class": "elephant",
+      "conf": 0.669
+    }
+  ],
+  "n01770081.jpg": [
+    {
+      "class": "umbrella",
+      "conf": 0.994
+    }
+  ],
+  "n02123394.jpg": [
+    {
+      "class": "cat",
+      "conf": 0.901
+    }
+  ],
+  "n02391049.jpg": [
+    {
+      "class": "zebra",
+      "conf": 0.99
+    }
+  ],
+  "n04461696.jpg": [
+    {
+      "class": "truck",
+      "conf": 0.993
+    },
+    {
+      "class": "truck",
+      "conf": 0.798
+    }
+  ]
+}

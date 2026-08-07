@@ -1,0 +1,16 @@
+{
+  "kernel3": 0.9823,
+  "kernel5": 0.9854,
+  "kernel7": 0.9882,
+  "pool_max": 0.9858,
+  "pool_avg": 0.9812,
+  "poolk2": 0.9858,
+  "poolk3": 0.9845,
+  "channels_6-16": 0.9855,
+  "channels_12-32": 0.9905,
+  "act_relu": 0.9867,
+  "act_tanh": 0.9831,
+  "act_sigmoid": 0.1135,
+  "stride1": 0.9857,
+  "stride2": 0.9768
+}

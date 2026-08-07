@@ -1,0 +1,10 @@
+﻿Embedding模型,分类器,测试集Acc
+DeepWalk,Logistic,0.8118
+DeepWalk,MLP-1层,0.8247
+DeepWalk,MLP-2层,0.8321
+node2vec,Logistic,0.8007
+node2vec,MLP-1层,0.8247
+node2vec,MLP-2层,0.8137
+LINE,Logistic,0.5221
+LINE,MLP-1层,0.5498
+LINE,MLP-2层,0.5461

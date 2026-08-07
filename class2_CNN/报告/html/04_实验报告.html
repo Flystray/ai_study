@@ -1,0 +1,815 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>第三部分　实验报告</title>
+<style>
+:root {
+  --main: #2c3e50; --accent: #1a5276; --border: #d5dbe0; --bg: #f6f8fa;
+  --code-bg: #f0f2f5; --quote-bar: #b8c4cf;
+}
+* { box-sizing: border-box; }
+body {
+  margin: 0; background: var(--bg); color: var(--main);
+  font-family: -apple-system, "Segoe UI", "Microsoft YaHei", "PingFang SC", sans-serif;
+  line-height: 1.75; font-size: 15.5px;
+}
+.container { max-width: 880px; margin: 32px auto 80px; padding: 40px 56px;
+  background: #fff; border: 1px solid var(--border); border-radius: 8px;
+  box-shadow: 0 1px 4px rgba(0,0,0,.06); }
+h1 { font-size: 26px; color: var(--accent); border-bottom: 3px solid var(--accent);
+  padding-bottom: 12px; margin-top: 8px; }
+h2 { font-size: 21px; color: var(--accent); border-bottom: 1px solid var(--border);
+  padding-bottom: 6px; margin-top: 34px; }
+h3 { font-size: 17.5px; color: #34495e; margin-top: 26px; }
+h4 { font-size: 16px; color: #566573; }
+a { color: var(--accent); }
+p, li { text-align: justify; }
+strong { color: #1b2631; }
+
+/* 目录 */
+.toc { background: var(--bg); border: 1px solid var(--border); border-radius: 6px;
+  padding: 14px 22px; margin-bottom: 30px; font-size: 14px; }
+.toc .toc-title { font-weight: 700; color: var(--accent); margin-bottom: 6px; }
+.toc ul { list-style: none; padding-left: 16px; margin: 4px 0; }
+.toc li { margin: 2px 0; }
+.toc a { text-decoration: none; }
+.toc a:hover { text-decoration: underline; }
+
+/* 表格 */
+table { border-collapse: collapse; width: 100%; margin: 18px 0; font-size: 14.5px; }
+th, td { border: 1px solid var(--border); padding: 8px 12px; text-align: left; }
+th { background: #eef2f6; color: var(--accent); font-weight: 600; }
+tbody tr:nth-child(even) { background: #fafbfc; }
+
+/* 引用块 */
+blockquote { margin: 16px 0; padding: 10px 18px; background: var(--bg);
+  border-left: 4px solid var(--quote-bar); border-radius: 0 4px 4px 0; color: #4a5a66; }
+blockquote p { margin: 6px 0; }
+
+/* 代码 */
+code { background: var(--code-bg); padding: 2px 6px; border-radius: 4px;
+  font-family: Consolas, "Courier New", monospace; font-size: 88%; color: #c0392b; }
+pre { background: #f8f9fa; border: 1px solid var(--border); border-radius: 6px;
+  padding: 12px 16px; overflow-x: auto; }
+pre code { background: none; padding: 0; color: #2c3e50; font-size: 13.5px; }
+
+/* 数学公式 */
+.math-block { text-align: center; margin: 20px 0; overflow-x: auto; }
+mjx-container[jax="CHTML"] { font-size: 105%; }
+</style>
+<script>
+window.MathJax = {
+  tex: { inlineMath: [['\\(', '\\)']], displayMath: [['\\[', '\\]']] },
+  options: { skipHtmlTags: ['script', 'noscript', 'style', 'textarea', 'pre', 'code'] }
+};
+</script>
+<script src="mathjax/tex-chtml.js"></script>
+</head>
+<body>
+<div class="container">
+<div class="toc">
+<ul>
+<li><a href="#c2676beb">第三部分 实验报告</a><ul>
+<li><a href="#5379de53">1. 实验环境</a></li>
+<li><a href="#a966dee5">2. 实验总体设计</a><ul>
+<li><a href="#b4ae259c">2.1 数据集</a></li>
+<li><a href="#891ff003">2.2 统一口径</a></li>
+</ul>
+</li>
+<li><a href="#9a5bb08f">3. 实验一：LeNet-5 与全连接网络的对比</a><ul>
+<li><a href="#cdb172b5">3.1 设计目的</a></li>
+<li><a href="#5829bf50">3.2 模型与超参</a></li>
+<li><a href="#8d63e3df">3.3 实验结果</a></li>
+<li><a href="#ed346308">3.4 分析与结论</a></li>
+</ul>
+</li>
+<li><a href="#1ab5cec9">4. 实验二：LeNet-5 超参数对比</a><ul>
+<li><a href="#6503d177">4.1 设计</a></li>
+<li><a href="#9bcbed79">4.2 结果汇总（MNIST，各 4 epochs）</a></li>
+<li><a href="#c1010534">4.3 分析与结论</a></li>
+</ul>
+</li>
+<li><a href="#bffc49b3">5. 实验三：知识蒸馏</a><ul>
+<li><a href="#2508295d">5.1 设计</a></li>
+<li><a href="#0ed0adbc">5.2 实验结果</a></li>
+<li><a href="#c21bdc2b">5.3 分析与结论</a></li>
+</ul>
+</li>
+<li><a href="#35545080">6. 实验四：AutoEncoder（CNN-AE vs 全连接 AE）</a><ul>
+<li><a href="#b303f2d3">6.1 设计</a></li>
+<li><a href="#809ad54d">6.2 结果（15 epochs，MSE 重建损失，输入 [0,1]）</a></li>
+<li><a href="#62cd3e51">6.3 分析与结论</a></li>
+<li><a href="#004e3e2d">6.4 延伸拓展：潜在空间的"背诵 vs 理解"验证（插值实验）</a></li>
+</ul>
+</li>
+<li><a href="#7a304d2f">7. 实验五：GAN 与 CGAN</a><ul>
+<li><a href="#4421ea06">7.1 设计</a></li>
+<li><a href="#2b36d723">7.2 结果</a></li>
+<li><a href="#70697f37">7.3 分析与结论</a></li>
+</ul>
+</li>
+<li><a href="#a6b14725">8. 实验六：预训练模型在 ImageNet 上的验证（完整完成）</a><ul>
+<li><a href="#a8dab0a8">8.1 结构分析（参数量 / FLOPs / 存储）</a></li>
+<li><a href="#f6507ca3">8.2 ImageNet 验证结果</a></li>
+<li><a href="#a4a61034">8.3 分析</a></li>
+</ul>
+</li>
+<li><a href="#aac358c4">9. 选做实验（已完成）</a><ul>
+<li><a href="#195c0b4a">9.1 Pix2Pix 风格迁移（边缘图 → 建筑立面）</a></li>
+<li><a href="#6f8ab82c">9.2 YOLOv3 目标检测（COCO 80 类）</a></li>
+</ul>
+</li>
+<li><a href="#144d8262">10. 实验总结与学习心得</a><ul>
+<li><a href="#e27122a4">10.1 实验成果一览</a></li>
+<li><a href="#63429d3f">10.2 学习心得</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</div>
+
+<article>
+<h1 id="c2676beb">第三部分　实验报告</h1>
+<h2 id="5379de53">1. 实验环境</h2>
+<table>
+<thead>
+<tr>
+<th>项目</th>
+<th>配置</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>操作系统</td>
+<td>Windows 10 Enterprise（64 位）</td>
+</tr>
+<tr>
+<td>编程语言</td>
+<td>Python 3.13（Anaconda）</td>
+</tr>
+<tr>
+<td>深度学习框架</td>
+<td>PyTorch 2.13.0（CPU 版）、torchvision 0.28.0</td>
+</tr>
+<tr>
+<td>计算设备</td>
+<td>CPU（无 GPU），多核并行</td>
+</tr>
+<tr>
+<td>其他依赖</td>
+<td>NumPy、Matplotlib、PIL</td>
+</tr>
+<tr>
+<td>代码仓库</td>
+<td><code>code/</code> 目录，公共框架 <code>common.py</code>，各实验 <code>exp1~exp8.py</code></td>
+</tr>
+</tbody>
+</table>
+<h2 id="a966dee5">2. 实验总体设计</h2>
+<h3 id="b4ae259c">2.1 数据集</h3>
+<table>
+<thead>
+<tr>
+<th>数据集</th>
+<th>内容</th>
+<th>尺寸</th>
+<th>训练/测试</th>
+<th>用途</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>MNIST-digits</td>
+<td>手写数字 0-9</td>
+<td>28×28 灰度</td>
+<td>60k / 10k</td>
+<td>分类、蒸馏、AE、GAN</td>
+</tr>
+<tr>
+<td>MNIST-Fashion</td>
+<td>10 类服饰</td>
+<td>28×28 灰度</td>
+<td>60k / 10k</td>
+<td>分类、蒸馏、AE</td>
+</tr>
+<tr>
+<td>CIFAR-10</td>
+<td>10 类自然图像</td>
+<td>32×32 彩色</td>
+<td>50k / 10k</td>
+<td>多通道 LeNet-5</td>
+</tr>
+<tr>
+<td>ImageNet（用户自备）</td>
+<td>1000 类</td>
+<td>224×224</td>
+<td>—</td>
+<td>预训练模型验证</td>
+</tr>
+</tbody>
+</table>
+<h3 id="891ff003">2.2 统一口径</h3>
+<ul>
+<li><strong>固定随机种子</strong>：全部实验 <code>set_seed(42)</code>，保证可复现；</li>
+<li><strong>优化器</strong>：SGD（momentum=0.9）用于分类/蒸馏，Adam（lr=2e-4）用于生成式模型；</li>
+<li><strong>评估指标</strong>：分类用测试集准确率（top-1），AE 用重建 MSE，GAN 用生成图像质量（可视化 + D/G loss）；</li>
+<li><strong>公平性设计</strong>：LeNet-5 与 MLP 采用相同的 epoch、优化器与学习率，仅结构不同。</li>
+</ul>
+<h2 id="9a5bb08f">3. 实验一：LeNet-5 与全连接网络的对比</h2>
+<h3 id="cdb172b5">3.1 设计目的</h3>
+<p>验证 CNN 相对全连接网络在图像任务上的两个核心优势：
+1. <strong>精度更高</strong>：卷积的局部连接与权值共享更契合图像空间结构；
+2. <strong>参数效率更高</strong>：以更少参数取得更好效果。</p>
+<h3 id="5829bf50">3.2 模型与超参</h3>
+<table>
+<thead>
+<tr>
+<th>模型</th>
+<th>结构</th>
+<th>参数量(MNIST)</th>
+<th>参数量(CIFAR-10)</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>LeNet-5</td>
+<td>C(6,5×5)→P→C(16,5×5)→P→FC(120,84,10)，ReLU</td>
+<td>44,426</td>
+<td>62,006</td>
+</tr>
+<tr>
+<td>MLP</td>
+<td>784→200→100→10（CIFAR 用 512→256→10）</td>
+<td>178,110</td>
+<td>1,707,274</td>
+</tr>
+</tbody>
+</table>
+<p>训练配置：SGD(lr=1e-2, momentum=0.9)；MNIST/Fashion 各 8 epochs，CIFAR-10 各 15 epochs。</p>
+<h3 id="8d63e3df">3.3 实验结果</h3>
+<blockquote>
+<p>训练至收敛（epoch 数：MNIST 8、Fashion 15、CIFAR-10 20，SGD lr=1e-2），曲线末端已趋于平稳。</p>
+</blockquote>
+<p><strong>MNIST-digits（8 epochs）：</strong></p>
+<table>
+<thead>
+<tr>
+<th>模型</th>
+<th>参数量</th>
+<th>测试准确率</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>LeNet-5</td>
+<td>44,426</td>
+<td><strong>0.9879（98.79%）</strong></td>
+</tr>
+<tr>
+<td>MLP</td>
+<td>178,110</td>
+<td>0.9723（97.23%）</td>
+</tr>
+</tbody>
+</table>
+<p><img alt="MNIST 训练曲线" src="../results/exp1_mnist_curve.png" /></p>
+<p><strong>MNIST-Fashion（15 epochs，已收敛）：</strong></p>
+<table>
+<thead>
+<tr>
+<th>模型</th>
+<th>参数量</th>
+<th>测试准确率</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>LeNet-5</td>
+<td>44,426</td>
+<td><strong>0.8925（89.25%）</strong></td>
+</tr>
+<tr>
+<td>MLP</td>
+<td>178,110</td>
+<td>0.8785（87.85%）</td>
+</tr>
+</tbody>
+</table>
+<p><img alt="Fashion 训练曲线" src="../results/exp1_fashion_curve.png" /></p>
+<p><strong>CIFAR-10（20 epochs，多通道输入，已收敛）：</strong></p>
+<table>
+<thead>
+<tr>
+<th>模型</th>
+<th>参数量</th>
+<th>测试准确率</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>LeNet-5</td>
+<td>62,006</td>
+<td><strong>0.6643（66.43%）</strong></td>
+</tr>
+<tr>
+<td>MLP</td>
+<td>1,707,274</td>
+<td>0.4912（49.12%）</td>
+</tr>
+</tbody>
+</table>
+<p><img alt="CIFAR-10 训练曲线" src="../results/exp1_cifar10_curve.png" /></p>
+<h3 id="ed346308">3.4 分析与结论</h3>
+<ol>
+<li><strong>三个数据集上 LeNet-5 全面优于 MLP</strong>：MNIST +1.56pp、Fashion +1.40pp、CIFAR-10 <strong>+17.31pp</strong>。数据集越复杂、空间结构越重要，CNN 的优势越明显；</li>
+<li><strong>参数效率</strong>：CIFAR-10 上 MLP 参数量是 LeNet-5 的 <strong>27.5 倍</strong>，精度却低 17 个百分点。卷积的局部连接 + 权重共享使 CNN 用更少参数提取了更有用的特征；</li>
+<li><strong>CIFAR-10 上的巨大差距</strong>（66.4% vs 49.1%）说明：自然图像的空间局部性（相邻像素强相关）对全连接网络是"灾难性"的——MLP 逐像素展开破坏了空间结构，且 170 万参数在 5 万样本上严重过拟合、泛化差；而 CNN 的卷积归纳偏置天然适配图像。增大 epoch 后 MLP 反而从 50.4% 略降到 49.1%，是过拟合的直接表现；</li>
+<li><strong>训练充分性</strong>：初版 Fashion（8 epoch）与 CIFAR（15 epoch）曲线末端仍在上升，未充分收敛；将 epoch 增至 15 / 20 后，两者最终精度分别提升 0.57pp / 1.82pp，曲线末端趋于平稳，结论不变——CNN 的优势在收敛后更加稳固；</li>
+<li>MLP 在 MNIST 上也达到 97%+，因为手写数字是"低方差"的简单任务，结构先验的重要性降低——<strong>CNN 的价值随任务复杂度上升而放大</strong>。</li>
+</ol>
+<h2 id="1ab5cec9">4. 实验二：LeNet-5 超参数对比</h2>
+<h3 id="6503d177">4.1 设计</h3>
+<p>在 MNIST 上以"单变量"原则对比 6 个超参数：卷积核大小（3/5/7）、池化种类（max/avg）、池化大小（2/3）、通道个数（6,16 / 12,32）、激活函数（relu/tanh/sigmoid）、stride（1/2）。为隔离单一变量影响，核大小对比时用 <code>padding=k//2</code> 保持特征图尺寸一致；每配置训练 4 epochs。</p>
+<h3 id="9bcbed79">4.2 结果汇总（MNIST，各 4 epochs）</h3>
+<table>
+<thead>
+<tr>
+<th>超参数</th>
+<th>取值</th>
+<th>测试准确率</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>卷积核大小</td>
+<td>3×3</td>
+<td>0.9823</td>
+</tr>
+<tr>
+<td>卷积核大小</td>
+<td>5×5（基线）</td>
+<td>0.9854</td>
+</tr>
+<tr>
+<td>卷积核大小</td>
+<td>7×7</td>
+<td><strong>0.9882</strong></td>
+</tr>
+<tr>
+<td>池化种类</td>
+<td>max</td>
+<td><strong>0.9858</strong></td>
+</tr>
+<tr>
+<td>池化种类</td>
+<td>avg</td>
+<td>0.9812</td>
+</tr>
+<tr>
+<td>池化大小</td>
+<td>2×2</td>
+<td><strong>0.9858</strong></td>
+</tr>
+<tr>
+<td>池化大小</td>
+<td>3×3</td>
+<td>0.9845</td>
+</tr>
+<tr>
+<td>通道个数</td>
+<td>(6,16)</td>
+<td>0.9855</td>
+</tr>
+<tr>
+<td>通道个数</td>
+<td>(12,32)</td>
+<td><strong>0.9905</strong></td>
+</tr>
+<tr>
+<td>激活函数</td>
+<td>relu</td>
+<td><strong>0.9867</strong></td>
+</tr>
+<tr>
+<td>激活函数</td>
+<td>tanh</td>
+<td>0.9831</td>
+</tr>
+<tr>
+<td>激活函数</td>
+<td>sigmoid</td>
+<td>0.1135（几乎不收敛）</td>
+</tr>
+<tr>
+<td>stride</td>
+<td>1</td>
+<td><strong>0.9857</strong></td>
+</tr>
+<tr>
+<td>stride</td>
+<td>2</td>
+<td>0.9768</td>
+</tr>
+</tbody>
+</table>
+<p><img alt="超参数对比曲线" src="../results/exp2_hyperparam_curves.png" /></p>
+<h3 id="c1010534">4.3 分析与结论</h3>
+<ol>
+<li><strong>卷积核大小：越大越好（7×7 &gt; 5×5 &gt; 3×3）</strong>。更大的感受野在 MNIST 上能捕获更完整的笔画结构；但 7×7 参数量更大、计算更贵，实际中 3×3 堆叠（VGG）是更优的折中；</li>
+<li><strong>Max Pooling 优于 Average Pooling（+0.46pp）</strong>：max 池化保留局部最强响应，利于特征边缘/纹理提取，这也是主流的默认选择；</li>
+<li><strong>池化窗口 2×2 略优于 3×3</strong>：更大的池化窗口过度下采样，丢失细节；</li>
+<li><strong>通道数翻倍（6,16→12,32）提升显著（+0.5pp）</strong>：更多滤波器＝更多特征维度，但代价是参数与计算量增长，需在容量与效率间权衡；</li>
+<li><strong>激活函数差异巨大</strong>：ReLU &gt; tanh ≫ sigmoid。<strong>sigmoid 几乎不收敛（11.35%）</strong>，原因是其输出饱和区导数趋近 0，在多层网络中梯度逐层衰减（梯度消失），深层权重几乎不更新——这是深度学习论文普遍弃用 sigmoid 改用 ReLU 的直接实验证据；</li>
+<li><strong>stride=2 降低精度（-0.89pp）</strong>：stride 增大导致特征图快速缩小，信息在卷积早期被过多丢弃。</li>
+</ol>
+<h2 id="bffc49b3">5. 实验三：知识蒸馏</h2>
+<h3 id="2508295d">5.1 设计</h3>
+<p>教师网络为 LeNet-5（从实验一直接复用），学生网络为更小的 MLP(128→64)。对比学生网络三种情况：
+1. 独立训练（只用硬标签）；
+2. 蒸馏训练（教师软标签 + 硬标签，温度 T=4，权重 α=0.5）。</p>
+<blockquote>
+<p>蒸馏损失：\(\mathcal{L}=\alpha\cdot\mathrm{CE}(q_s,y)+(1-\alpha)\cdot T^2\cdot D_{KL}(q_t^T\parallel q_s^T)\)</p>
+</blockquote>
+<h3 id="0ed0adbc">5.2 实验结果</h3>
+<blockquote>
+<p>教师 LeNet-5 用<strong>完整训练集</strong>训练；学生 MLP(32) 只使用 <strong>10% 训练数据</strong>。
+经超参扫描（<code>exp3_tune.py</code>）确定：温度越低、硬标签权重越高越优，最终采用 <strong>T=1, alpha=0.7</strong>。</p>
+</blockquote>
+<p><strong>MNIST-digits（学生训练数据 6000 张）：</strong></p>
+<table>
+<thead>
+<tr>
+<th>模型</th>
+<th>参数量</th>
+<th>训练数据量</th>
+<th>测试准确率</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>教师 LeNet-5</td>
+<td>44,426</td>
+<td>60,000（完整）</td>
+<td>98.76%</td>
+</tr>
+<tr>
+<td>学生 MLP（独立训练）</td>
+<td>25,450</td>
+<td>6,000（10%）</td>
+<td>89.51%</td>
+</tr>
+<tr>
+<td>学生 MLP（蒸馏训练）</td>
+<td>25,450</td>
+<td>6,000（10%）</td>
+<td><strong>90.51%（+1.00pp）</strong></td>
+</tr>
+</tbody>
+</table>
+<p><strong>MNIST-Fashion（学生训练数据 6000 张）：</strong></p>
+<table>
+<thead>
+<tr>
+<th>模型</th>
+<th>参数量</th>
+<th>训练数据量</th>
+<th>测试准确率</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>教师 LeNet-5</td>
+<td>44,426</td>
+<td>60,000（完整）</td>
+<td>88.68%</td>
+</tr>
+<tr>
+<td>学生 MLP（独立训练）</td>
+<td>25,450</td>
+<td>6,000（10%）</td>
+<td>81.98%</td>
+</tr>
+<tr>
+<td>学生 MLP（蒸馏训练）</td>
+<td>25,450</td>
+<td>6,000（10%）</td>
+<td><strong>82.09%（+0.11pp）</strong></td>
+</tr>
+</tbody>
+</table>
+<p><img alt="MNIST 蒸馏对比" src="../results/exp3_distill_mnist.png" />
+<img alt="Fashion 蒸馏对比" src="../results/exp3_distill_fashion.png" /></p>
+<h3 id="c21bdc2b">5.3 分析与结论</h3>
+<ol>
+<li><strong>蒸馏有效</strong>：在训练数据只有 10% 的困难场景下，MNIST 上蒸馏学生比独立训练高 <strong>1.00 个百分点</strong>（89.51%→90.51%），说明教师 softmax 分布携带的类间结构信息确实弥补了数据不足——与 Hinton 论文"用教师软标签训练可等效于更多数据"的结论一致；</li>
+<li><strong>提升幅度有限的原因</strong>：统计了教师 softmax 的平均最大概率——MNIST 教师高达 <strong>99.06%</strong>，即教师对每个样本都"过于自信"，软化后的分布几乎退化为硬标签，能提供的"暗知识"极少；Fashion 教师为 88.71%，信息稍多但学生 MLP(32) 容量小、任务更难，提升空间被压缩；</li>
+<li><strong>蒸馏的最佳使用场景</strong>：本实验说明，蒸馏的收益取决于 <strong>"教师知道但标注没告诉学生的信息量"</strong>。在 MNIST 这类类别简单、教师置信度趋近 1 的任务上收益有限；而在 ImageNet 等 1000 类、类别高度相似的大规模任务上（教师平均置信度低、类间层级结构丰富），蒸馏提升显著。这也解释了为什么知识蒸馏最常用于<strong>模型压缩</strong>与<strong>大规模分类</strong>场景；</li>
+<li><strong>温度的超参规律</strong>：扫描显示 T 越低越好（T=1 最优）——高温度会过度平滑本已尖锐的教师分布，进一步稀释信息。当教师置信度低（信息丰富）时，适当升温（如 T=2~4）才有助于暴露类间相似度。</li>
+</ol>
+<h2 id="35545080">6. 实验四：AutoEncoder（CNN-AE vs 全连接 AE）</h2>
+<h3 id="b303f2d3">6.1 设计</h3>
+<p>在 MNIST / Fashion 上对比两种自编码器（15 epochs，MSE 重建损失）：
+- <strong>CNN-AE</strong>：卷积编码（32→64→64→128 通道、下采样）+ 128×4×4→64 潜在向量 + 反卷积解码；
+- <strong>MLP-AE</strong>：784→256→64→256→784。</p>
+<h3 id="809ad54d">6.2 结果（15 epochs，MSE 重建损失，输入 [0,1]）</h3>
+<table>
+<thead>
+<tr>
+<th>数据集</th>
+<th>CNN-AE 重建 MSE</th>
+<th>MLP-AE 重建 MSE</th>
+<th>CNN 相对优势</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>MNIST</td>
+<td><strong>0.00180</strong></td>
+<td>0.00335</td>
+<td>低 46%</td>
+</tr>
+<tr>
+<td>MNIST-Fashion</td>
+<td><strong>0.00512</strong></td>
+<td>0.00744</td>
+<td>低 31%</td>
+</tr>
+</tbody>
+</table>
+<p><strong>重构可视化（上：原图 / 中：CNN-AE 重构 / 下：MLP-AE 重构）：</strong></p>
+<p><img alt="MNIST 重构对比" src="../results/exp4_recon_mnist.png" /></p>
+<p><img alt="Fashion 重构对比" src="../results/exp4_recon_fashion.png" /></p>
+<p><strong>训练损失曲线：</strong></p>
+<p><img alt="MNIST AE 损失" src="../results/exp4_loss_mnist.png" />
+<img alt="Fashion AE 损失" src="../results/exp4_loss_fashion.png" /></p>
+<h3 id="62cd3e51">6.3 分析与结论</h3>
+<ol>
+<li><strong>CNN-AE 重建质量全面优于 MLP-AE</strong>：两个数据集上 MSE 均降低 30%-46%，可视化可见 CNN-AE 重构的数字/服饰轮廓更清晰、细节保留更完整；</li>
+<li><strong>CNN 结构的优势来源</strong>：
+   - 卷积的<strong>局部感受野 + 权值共享</strong>天然适合图像空间结构，编码器能提取有意义的局部特征（边缘、纹理）；
+   - <strong>下采样 + 反卷积</strong>的编码-解码结构保留了空间拓扑关系，比全连接"展平-重排"更符合图像的平移不变性；</li>
+<li><strong>MLP-AE 的劣势</strong>：全连接把 28×28 像素展平成 784 维向量，破坏了像素间的空间邻接关系，压缩到 64 维潜在空间时会丢失大量空间细节；</li>
+<li><strong>潜在空间的局限</strong>：本实验验证了 AE 的重建能力，但其潜在空间无约束（不像 VAE 有正态先验），无法直接用于采样生成新样本——这正是后续 GAN 实验（实验五）要解决的问题。</li>
+</ol>
+<h3 id="004e3e2d">6.4 延伸拓展：潜在空间的"背诵 vs 理解"验证（插值实验）</h3>
+<p>重建好可能有两种截然不同的原因：<strong>死记硬背</strong>（记住每张图怎么"抄"）与<strong>真学到了结构</strong>（理解了笔画规律）。前者换输入就泛化差、潜在空间是散乱的点；后者泛化好、潜在空间连续且有语义。为区分二者，本实验额外做了两个可视化验证（不在任务必做范围内，用于检验 AE 内部学到的表征质量）。</p>
+<p><strong>① 潜在空间分布（PCA 降维）</strong></p>
+<p>把 MNIST 测试集中 0-9 各 30 张图编码为 64 维潜在向量 z，再用 PCA 降到 2 维绘制散点图：</p>
+<p><img alt="潜在空间分布" src="../results/exp4_latent_space.png" /></p>
+<p>可以看到：<strong>同一数字的样本聚成紧密的一团，不同数字的团互相分离</strong>，例如数字 7 与 3 的团中心相距很远。这说明 z 按"内容语义"而非"像素位置"组织——网络确实学到了"这是什么数字"的表征，而不是把图像当字典逐张抄写。</p>
+<p><strong>② 潜在空间插值（7 → 3）</strong></p>
+<p>取一个"7"的 z₇ 与一个"3"的 z₃，在两者之间线性插值（t=0 → t=1），逐步解码成图：</p>
+<p><img alt="潜在空间插值" src="../results/exp4_interp.png" /></p>
+<p>插值中间帧呈现"7 的笔画逐渐形变为 3"的过渡，而非随机乱码，进一步印证 z 空间是<strong>连续且有结构的</strong>——这正是"表征学习"的核心价值。<strong>同时</strong>，中间帧仍明显模糊、不自然，说明 AE 的 z 空间缺少分布约束（任意中间点并不保证是"好看的图"），这是 AE 的直接局限，也正是 <strong>VAE（为 z 施加正态先验）</strong> 与 <strong>GAN（用判别器逼真）</strong> 的改进动机。</p>
+<blockquote>
+<p>小结：插值实验不产生报告必需的数据，却是检验"AE 是理解还是背诵"的试金石，同时直观暴露了 AE 潜在空间无约束的缺陷，为后续 VAE / GAN 的学习提供了动机。</p>
+</blockquote>
+<h2 id="7a304d2f">7. 实验五：GAN 与 CGAN</h2>
+<h3 id="4421ea06">7.1 设计</h3>
+<p>在 MNIST 上实现 GAN 与条件 GAN（CGAN），生成器 100 维噪声 → 28×28 图像（反卷积上采样），判别器为卷积二分类网络；CGAN 将类别标签 one-hot 嵌入分别注入生成器与判别器。Adam(2e-4) 训练。</p>
+<h3 id="2b36d723">7.2 结果</h3>
+<p>在 MNIST 上各训练 15 epochs（Adam lr=2e-4，CPU 环境）。生成器与判别器的对抗损失曲线、最终生成样本如下：</p>
+<table>
+<thead>
+<tr>
+<th>模型</th>
+<th>判别器最终损失</th>
+<th>生成器最终损失</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>GAN</td>
+<td>0.312</td>
+<td>1.936</td>
+</tr>
+<tr>
+<td>CGAN</td>
+<td>0.728</td>
+<td>2.714</td>
+</tr>
+</tbody>
+</table>
+<p><strong>GAN 生成效果（随机噪声 → 数字）：</strong></p>
+<p><img alt="GAN 生成结果" src="../results/exp5_gan_mnist_final.png" /></p>
+<p><strong>CGAN 生成效果（按标签条件生成 0-9，每列对应一个数字）：</strong></p>
+<p><img alt="CGAN 生成结果" src="../results/exp5_cgan_mnist_final.png" /></p>
+<p><strong>训练曲线：</strong></p>
+<p><img alt="GAN 损失曲线" src="../results/exp5_gan_mnist_loss.png" />
+<img alt="CGAN 损失曲线" src="../results/exp5_cgan_mnist_loss.png" /></p>
+<h3 id="70697f37">7.3 分析与结论</h3>
+<ol>
+<li><strong>GAN 能生成可辨识的数字</strong>：经过 15 epochs 对抗训练，生成器学会了逼近 MNIST 数据分布，生成的数字在形状、笔触上与真实手写体相似，验证了 min-max 博弈训练的有效性；</li>
+<li><strong>CGAN 实现"按标签定向生成"</strong>：加入类别条件后，每一列生成的数字与对应标签一致（0-9 清晰可辨），体现了条件信息对生成内容的控制力——这是从"随机生成"到"可控生成"的关键一步；</li>
+<li><strong>CGAN 训练难度略高</strong>（D loss 0.73 &gt; GAN 的 0.31）：条件变量增加了判别器的输入信息，对抗收敛更慢，需要更多 epoch 才能达到与 GAN 相同的视觉质量；</li>
+<li><strong>训练不稳定性的观察</strong>：生成器损失（G loss）在两个模型中都出现波动而非单调下降，反映了 GAN 训练不稳定的典型特征（模式坍缩倾向、判别器-生成器能力失衡）。未来可尝试 WGAN 的 Wasserstein 距离、谱归一化等改进。</li>
+</ol>
+<h2 id="a6b14725">8. 实验六：预训练模型在 ImageNet 上的验证（完整完成）</h2>
+<h3 id="a8dab0a8">8.1 结构分析（参数量 / FLOPs / 存储）</h3>
+<table>
+<thead>
+<tr>
+<th>模型</th>
+<th>参数量</th>
+<th>单图 224² 推理 FLOPs</th>
+<th>存储大小（fp32）</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>AlexNet</td>
+<td>61.10M</td>
+<td>1.43 G</td>
+<td>244.4 MB</td>
+</tr>
+<tr>
+<td>VGG-16</td>
+<td>138.36M</td>
+<td>30.94 G</td>
+<td>553.4 MB</td>
+</tr>
+<tr>
+<td>ResNet-50</td>
+<td>25.56M</td>
+<td>8.18 G</td>
+<td>102.2 MB</td>
+</tr>
+</tbody>
+</table>
+<p><img alt="模型结构与复杂度对比" src="../results/exp6_model_comparison.png" /></p>
+<h3 id="f6507ca3">8.2 ImageNet 验证结果</h3>
+<p>使用 <strong>ImageNet-1k 官方验证集子集（每类 5 张，共 5000 张）</strong> 测试三种预训练模型（torchvision 预训练权重），评测 Top-1 / Top-5 准确率：</p>
+<table>
+<thead>
+<tr>
+<th>模型</th>
+<th>参数量</th>
+<th>Top-1 准确率</th>
+<th>Top-5 准确率</th>
+<th>5000 张推理耗时</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>AlexNet</td>
+<td>61.10M</td>
+<td>0.5672（56.72%）</td>
+<td>0.7904（79.04%）</td>
+<td>294 s</td>
+</tr>
+<tr>
+<td>VGG-16</td>
+<td>138.36M</td>
+<td>0.7224（72.24%）</td>
+<td>0.9046（90.46%）</td>
+<td>1788 s</td>
+</tr>
+<tr>
+<td>ResNet-50</td>
+<td>25.56M</td>
+<td><strong>0.7732（77.32%）</strong></td>
+<td><strong>0.9336（93.36%）</strong></td>
+<td>820 s</td>
+</tr>
+</tbody>
+</table>
+<p><img alt="ImageNet 准确率对比" src="../results/exp6_imagenet_accuracy.png" /></p>
+<p><img alt="ImageNet 预测示例（Top-5）" src="../results/exp6_imagenet_predictions.png" /></p>
+<h3 id="a4a61034">8.3 分析</h3>
+<ol>
+<li><strong>结果与官方（论文/torchvision 文档）高度一致</strong>：AlexNet ~56.5%、VGG-16 ~71.6%、ResNet-50 ~76.1%（官方均为完整 5 万张验证集），我们 5000 张子集的实测值与之吻合（56.7% / 72.2% / 77.3%），说明评测流程可靠；</li>
+<li><strong>模型容量与性能正相关，但效率差异显著</strong>：ResNet-50 参数最少（25.6M，仅为 VGG 的 1/5）、FLOPs 仅为 VGG 的 1/4，Top-1 却最高（77.3%），比 VGG 高 5 个百分点——<strong>Bottleneck + 残差连接实现了"更少的算力、更高的精度"</strong>；</li>
+<li><strong>VGG-16 效率最低</strong>：1.38 亿参数 + 31 GFLOPs，精度却不如参数更少的 ResNet-50，验证了"深而规整但不高效"的结论，也解释了它为何逐渐被 ResNet 取代；</li>
+<li><strong>Top-1 与 Top-5 的差距</strong>：约 16-22 个百分点，说明 ImageNet 1000 类中存在大量相似类别（如犬种），模型虽不能精确到第 1 名，但能识别到语义相近的类别——这也正是 softmax 分布携带"类间相似性"信息的来源，与实验三知识蒸馏的分析呼应；</li>
+<li>完整验证集（5 万张）可直接用 <code>python exp6_pretrained.py</code> 运行（数据已就绪于 <code>data/imagenet/val</code>）。</li>
+</ol>
+<h2 id="aac358c4">9. 选做实验（已完成）</h2>
+<h3 id="195c0b4a">9.1 Pix2Pix 风格迁移（边缘图 → 建筑立面）</h3>
+<p><strong>方法</strong>：条件 GAN（Isola 2017）——UNet 生成器（含跳跃连接保留空间细节）+ PatchGAN 判别器（70×70 分块判真伪）+ 损失 = GAN 对抗损失 + L1 重建损失（λ=100）。数据集：facades（400 张边缘图/建筑立面配对图，512×256）。</p>
+<p><strong>训练</strong>：CPU 环境 8 epochs，生成器损失从 46.97 降至 37.48（L1 分量占主导，符合 Pix2Pix 特征）。</p>
+<p><strong>生成效果</strong>（每行：输入边缘图 | 模型生成 | 真实建筑立面）：</p>
+<p><img alt="Pix2Pix 生成效果" src="../results/exp7_pix2pix_ep8.png" /></p>
+<p><strong>分析与结论</strong>：
+1. 模型学会从边缘骨架生成较逼真的建筑立面——窗户、墙体、屋顶轮廓得到还原，L1 项保证了结构对齐，PatchGAN 项改善了纹理真实感；
+2. 生成结果与真实图仍存在差异（颜色、细节不完美），因为仅 8 epochs 且 CPU 训练（论文为 200 epochs + GPU），也体现了 GAN 训练"慢热"的特点；
+3. 验证了 Pix2Pix"配对数据 + 条件 GAN + 结构化输出"的通用框架思想——同一套代码稍改数据即可迁移到其他图像翻译任务。</p>
+<h3 id="6f8ab82c">9.2 YOLOv3 目标检测（COCO 80 类）</h3>
+<p><strong>方法</strong>：OpenCV DNN 加载 Darknet 预训练 YOLOv3（cfg + 248MB weights），输入 416×416，NMS 去重。测试图取自 ImageNet 验证集（狗/猫/斑马/大象/卡车等）。</p>
+<p><strong>检测结果</strong>（置信度阈值 0.4）：</p>
+<table>
+<thead>
+<tr>
+<th>测试图</th>
+<th>检测结果（类别 + 置信度）</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>柯基犬图</td>
+<td>dog(1.00) ✅</td>
+</tr>
+<tr>
+<td>波斯猫图</td>
+<td>cat(0.90) ✅</td>
+</tr>
+<tr>
+<td>牧羊犬图</td>
+<td>dog(0.99) ✅</td>
+</tr>
+<tr>
+<td>斑点犬图</td>
+<td>dog(0.99), person(0.98) ✅</td>
+</tr>
+<tr>
+<td>斑马图</td>
+<td>zebra(0.99) ✅</td>
+</tr>
+<tr>
+<td>卡车图</td>
+<td>truck(0.99), truck(0.80) ✅</td>
+</tr>
+<tr>
+<td>大象图</td>
+<td>elephant(0.67) + 6×bird</td>
+</tr>
+<tr>
+<td>红熊猫图</td>
+<td>bear(0.65)（视觉相似误检）</td>
+</tr>
+</tbody>
+</table>
+<p><img alt="YOLOv3 检测效果" src="../results/exp8_yolov3_results.png" /></p>
+<p><strong>分析与结论</strong>：
+1. <strong>准确率</strong>：对主流目标（狗、猫、斑马、卡车、大象）都能以高置信度正确识别，多目标图（大象与鸟群、犬与人）也能同时检出；
+2. <strong>速度</strong>：CPU 下单张 416×416 推理仅 1-1.5 秒，远超 two-stage 方法，体现了 YOLO"一次前向回归"的实时性优势；
+3. <strong>误检分析</strong>：红熊猫（红棕毛色、体型相似）被识别为 bear(0.65)，大象图中检出 bird——单阶段模型对相似外观/小目标仍存在混淆，置信度也相对低，这正是 one-stage 在细粒度与小目标上的固有短板；
+4. 整体验证了 YOLOv3 多尺度预测（FPN 式 3 个尺度）与锚框机制的工程有效性。</p>
+<h2 id="144d8262">10. 实验总结与学习心得</h2>
+<h3 id="e27122a4">10.1 实验成果一览</h3>
+<table>
+<thead>
+<tr>
+<th>实验</th>
+<th>核心发现</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>实验一 LeNet-5 vs 全连接</td>
+<td>CNN 以更少参数（CIFAR 上少 27.5 倍）全面胜过 MLP，收敛后 CIFAR 仍高 17.3pp</td>
+</tr>
+<tr>
+<td>实验二 超参数对比</td>
+<td>大核/大通道/max 池化/ReLU 更优；<strong>sigmoid 因梯度消失几乎不收敛（11.35%）</strong></td>
+</tr>
+<tr>
+<td>实验三 知识蒸馏</td>
+<td>10% 数据场景下，蒸馏使 MNIST 学生提升 +1.00pp；收益取决于教师"暗知识"量</td>
+</tr>
+<tr>
+<td>实验四 自编码器</td>
+<td>CNN-AE 重建 MSE 比 MLP-AE 低 30%-46%，卷积结构更契合图像重建</td>
+</tr>
+<tr>
+<td>实验五 GAN/CGAN</td>
+<td>GAN 可生成逼真数字；CGAN 实现按标签定向生成</td>
+</tr>
+<tr>
+<td>实验六 预训练模型</td>
+<td>实测 ImageNet top-1：AlexNet 56.7% &lt; VGG-16 72.2% &lt; ResNet-50 77.3%，后者参数最少、算力最省、精度最高</td>
+</tr>
+<tr>
+<td>选做① Pix2Pix</td>
+<td>边缘图成功翻译为建筑立面，L1 保结构 + PatchGAN 提纹理</td>
+</tr>
+<tr>
+<td>选做② YOLOv3</td>
+<td>单张 CPU 推理约 1s，狗/猫/斑马/卡车等准确检测，红熊猫误检为 bear 体现 one-stage 短板</td>
+</tr>
+</tbody>
+</table>
+<h3 id="63429d3f">10.2 学习心得</h3>
+<ol>
+<li>
+<p><strong>从"能跑"到"懂原理"</strong>：亲手推导卷积层梯度（<code>∂L/∂W=δ*a</code>、<code>∂L/∂b=Σδ</code>、<code>∂L/∂a=δ*rot180(W)</code>）并观察 sigmoid 的梯度消失现象，比单纯看公式理解深刻得多——实验二里 sigmoid 的 11.35% 准确率就是梯度消失最直观的教科书证据；</p>
+</li>
+<li>
+<p><strong>调试是学习的核心环节</strong>：实验三蒸馏最初"不升反降"，排查后发现两个关键点——① 软标签与训练样本顺序未对齐（shuffle 导致错位）；② 温度与权重超参不匹配任务特性。逐一修复后蒸馏终于产生正向提升。这个过程让我体会到：<strong>实验结果不符合预期时，先检查数据对齐和实现细节，再怀疑模型本身</strong>；</p>
+</li>
+<li>
+<p><strong>CNN 系列模型的脉络</strong>：从 LeNet-5（局部连接+权值共享）到 AlexNet（ReLU/Dropout 工程化）、VGG（小核堆叠证明深度）、ResNet（残差解决退化），再到检测领域 R-CNN→Fast→Faster→FPN 与 YOLO/SSD 两条路线的演进，我理解了<strong>架构设计总是在"精度-速度-参数量"三者的权衡中推进</strong>；</p>
+</li>
+<li>
+<p><strong>生成式模型的谱系</strong>：AE（表征）→ VAE（分布先验）→ GAN（对抗博弈）→ CGAN（条件控制）→ Pix2Pix（配对翻译）→ CycleGAN（无配对翻译），每步解决前一步的一个缺陷，这种"以问题为导向"的演进思路值得学习；</p>
+</li>
+<li>
+<p><strong>工程现实</strong>：在 CPU 环境下，训练策略（epoch、batch、线程数）需要为硬件量体裁衣；数据集下载、镜像选择等环境工程同样是实验成败的一部分。</p>
+</li>
+</ol>
+</article>
+</div>
+</body>
+</html>
