@@ -1,0 +1,47 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(tesseract --version)",
+      "Bash(pip list *)",
+      "Bash(tesseract --list-langs)",
+      "Bash(python -c ' *)",
+      "Bash(pip index *)",
+      "Bash(python -c \"import torch; print\\('torch', torch.__version__\\)\")",
+      "Bash(pip config *)",
+      "Bash(curl -s https://pypi.org/pypi/dgl/json)",
+      "Bash(python -c \"import sys, json; data=json.load\\(sys.stdin\\); vs=[v for v in data['releases'] if '-' not in v]; print\\('最新版本:', vs[-1]\\); print\\('最近10个:', vs[-10:]\\)\")",
+      "Bash(curl -s https://pypi.org/pypi/dgl/2.2.1/json)",
+      "Bash(curl -s \"https://data.dgl.ai/wheels/torch-2.13/repo.html\")",
+      "Bash(curl -s \"https://data.dgl.ai/wheels/repo.html\")",
+      "Bash(conda env *)",
+      "Bash(where python *)",
+      "Bash(conda --version)",
+      "Bash(conda create *)",
+      "Bash(C:/Users/Administrator/miniconda3/envs/gnn/python.exe -m pip install torch==2.3.1 --index-url https://download.pytorch.org/whl/cpu)",
+      "Bash(curl -s -o /dev/null -w \"HTTP %{http_code}, 速度: %{speed_download} bytes/s\\\\n\" --max-time 20 -r 0-102399 \"https://mirrors.aliyun.com/pypi/simple/dgl/\")",
+      "Bash(curl -s \"https://mirrors.aliyun.com/pytorch-wheels/cpu/\")",
+      "Bash(curl -s \"https://mirrors.tuna.tsinghua.edu.cn/pypi/web/simple/dgl/\")",
+      "Bash(C:/Users/Administrator/miniconda3/envs/gnn/python.exe -m pip install \"torch==2.3.1+cpu\" --no-deps --index-url https://mirrors.aliyun.com/pytorch-wheels/cpu/)",
+      "Bash(curl -s -o /dev/null -w \"下载速度: %{speed_download} bytes/s, 大小: %{size_download}\\\\n\" --max-time 20 -r 0-1023999 \"https://mirrors.aliyun.com/pytorch-wheels/cpu/torch/torch-2.3.1%2Bcpu-cp312-cp312-win_amd64.whl\")",
+      "Bash(curl -s -o /dev/null -w \"速度: %{speed_download} bytes/s, 已下载: %{size_download} bytes\\\\n\" --max-time 30 \"https://mirrors.aliyun.com/pytorch-wheels/cpu/torch/torch-2.3.1%2Bcpu-cp312-cp312-win_amd64.whl\")",
+      "Bash(curl -s -o /dev/null -w \"速度: %{speed_download} bytes/s\\\\n\" --max-time 20 \"https://mirrors.ustc.edu.cn/pytorch-wheels/cpu/torch/torch-2.3.1%2Bcpu-cp312-cp312-win_amd64.whl\")",
+      "Bash(curl -s -o /dev/null -w \"HTTP %{http_code}, 速度: %{speed_download} bytes/s\\\\n\" --max-time 20 \"https://mirrors.aliyun.com/pytorch-wheels/cpu/torch-2.3.1%2Bcpu-cp312-cp312-win_amd64.whl\")",
+      "Bash(curl -s -o /dev/null -w \"HTTP %{http_code}, 速度: %{speed_download} bytes/s\\\\n\" --max-time 20 \"https://mirrors.ustc.edu.cn/pytorch-wheels/cpu/torch-2.3.1%2Bcpu-cp312-cp312-win_amd64.whl\")",
+      "Bash(curl -s -o /dev/null -w \"HTTP %{http_code}, 速度: %{speed_download} bytes/s\\\\n\" --max-time 20 \"https://download.pytorch.org/whl/cpu/torch-2.3.1%2Bcpu-cp312-cp312-win_amd64.whl\")",
+      "Bash(mkdir -p wheels)",
+      "Bash(curl -s -L -o wheels/torch-2.3.1+cpu-cp312-win_amd64.whl \"https://download.pytorch.org/whl/cpu/torch-2.3.1%2Bcpu-cp312-cp312-win_amd64.whl\" -w \"下载完成, 大小: %{size_download} bytes, 平均速度: %{speed_download} bytes/s\\\\n\")",
+      "Bash(C:/Users/Administrator/miniconda3/envs/gnn/python.exe -m pip install --no-deps wheels/torch-2.3.1+cpu-cp312-win_amd64.whl)",
+      "Bash(mv \"wheels/torch-2.3.1+cpu-cp312-cp312-win_amd64.whl\" \"wheels/torch-2.3.1-cp312-cp312-win_amd64.whl\")",
+      "Bash(C:/Users/Administrator/miniconda3/envs/gnn/python.exe -m pip install --no-deps wheels/torch-2.3.1-cp312-cp312-win_amd64.whl)",
+      "Bash(C:/Users/Administrator/miniconda3/envs/gnn/python.exe -c ' *)",
+      "Bash(rm -rf wheels)",
+      "Bash(C:/Users/Administrator/miniconda3/envs/gnn/python.exe -m pip install --no-deps \"https://download.pytorch.org/whl/cpu/torch-2.3.1%2Bcpu-cp312-cp312-win_amd64.whl\")",
+      "Bash(C:/Users/Administrator/miniconda3/envs/gnn/python.exe -m pip install -i https://mirrors.aliyun.com/pypi/simple/ dgl==2.2.1 \"numpy==1.26.4\" scipy scikit-learn matplotlib networkx pandas tqdm filelock typing-extensions sympy jinja2 fsspec)",
+      "Bash(C:/Users/Administrator/miniconda3/envs/gnn/python.exe -m pip install -i https://mirrors.aliyun.com/pypi/simple/ pyyaml)",
+      "Bash(cd \"C:\\\\Users\\\\Administrator\\\\Desktop\\\\ai_study\\\\class3_GNN\" && mkdir -p code data result \"报告\" && mv models.py utils.py code/ && rm -f class3_GNN.txt ocr_page_*.txt page_*.png && ls -la)"
+    ],
+    "additionalDirectories": [
+      "C:\\Users\\Administrator\\Desktop\\ai_study\\class3_GNN"
+    ]
+  }
+}
